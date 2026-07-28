@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feyzay | Hesap Oluştur</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<div class="sepet-overlay" id="sepet-overlay"></div>
+<div class="sepet-sidebar" id="sepet-sidebar">
+    <div class="sepet-header">
+        <h3>Alışveriş Sepeti</h3>
+        <button id="sepet-kapat">&times;</button>
+    </div>
+
+    <div class="sepet-icerik" id="sepet-icerik">
+        <p style="text-align: center; color: #888; margin-top: 20px;">Sepetiniz şu an boş.</p>
+    </div>
+
+    <div class="sepet-footer">
+        <div class="sepet-toplam-kutu">
+            <span>Toplam:</span>
+            <span id="sepet-toplam-fiyat">0.00 TL</span>
+        </div>
+        <button class="satin-al-btn">Ödeme Yap</button>
+    </div>
+</div>
+
+<body class="auth-page">
+
+    <header class="site-header" style="background-color: #111;">
+        <a href="index.html" class="logo" style="text-decoration: none;">FEYZAY</a>
+        <nav class="navigation">
+            <a href="index.html">Ana Sayfa</a>
+            <a href="urunler.html">Ürünler</a>
+            <a href="#" id="sepet-ac-btn">Sepet (0)</a>
+            <a href="kayit.html">Kayıt Ol</a>
+        </nav>
+    </header>
+
+    <main class="auth-section">
+        <div class="auth-container">
+
+            <div class="auth-toggle">
+                <button id="btn-login" class="toggle-btn active">Giriş Yap</button>
+                <button id="btn-signup" class="toggle-btn">Kayıt Ol</button>
+            </div>
+
+            <form id="login-form" class="auth-form active-form">
+                <h2 class="auth-title">Tekrar Hoş Geldin</h2>
+                <div class="input-group">
+                    <label for="login-email">E-posta</label>
+                    <input type="email" id="login-email" placeholder="ornek@mail.com" required>
+                </div>
+                <div class="input-group">
+                    <label for="login-password">Şifre</label>
+                    <input type="password" id="login-password" placeholder="Şifreniz" required>
+                </div>
+                <button type="submit" class="auth-submit-btn">Giriş Yap</button>
+            </form>
+
+            <form id="signup-form" class="auth-form" style="display: none;">
+                <h2 class="auth-title">Feyzay'a Katıl</h2>
+                <div class="input-group">
+                    <label for="signup-firstname">İsim</label>
+                    <input type="text" id="signup-firstname" placeholder="Adınız" required>
+                </div>
+                <div class="input-group">
+                    <label for="signup-lastname">Soyisim</label>
+                    <input type="text" id="signup-lastname" placeholder="Soyadınız" required>
+                </div>
+                <div class="input-group">
+                    <label for="signup-email">E-posta</label>
+                    <input type="email" id="signup-email" placeholder="ornek@mail.com" required>
+                </div>
+                <div class="input-group">
+                    <label for="signup-password">Şifre</label>
+                    <input type="password" id="signup-password" placeholder="En az 6 karakter" required>
+                </div>
+                <div class="input-group">
+                    <label for="signup-password-confirm">Şifreyi Onayla</label>
+                    <input type="password" id="signup-password-confirm" placeholder="Şifrenizi tekrar girin" required>
+                </div>
+                <button type="submit" class="auth-submit-btn">Hesap Oluştur</button>
+            </form>
+
+        </div>
+    </main>
+
+    <script src="base.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feyzay | Admin Panel</title>
+    <style>
+        :root {
+            --ink: #111111;
+            --paper: #ffffff;
+            --panel: #f7f6f4;
+            --line: #e7e5e1;
+            --muted: #8a8a8a;
+            --good: #1a8f4c;
+            --good-bg: #e9f9ef;
+            --bad: #c0392b;
+            --bad-bg: #fdecea;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background: var(--panel);
+            color: var(--ink);
+        }
+
+        button {
+            font-family: inherit;
+        }
+
+        /* ============ GİRİŞ EKRANI ============ */
+        .adm-login-screen {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ink);
+        }
+
+        .adm-login-box {
+            background: var(--paper);
+            width: 100%;
+            max-width: 360px;
+            padding: 40px 34px;
+            border-radius: 10px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, .35);
+        }
+
+        .adm-login-box h1 {
+            font-size: 20px;
+            letter-spacing: 3px;
+            margin-bottom: 6px;
+        }
+
+        .adm-login-box p {
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 24px;
+        }
+
+        .adm-login-box input {
+            width: 100%;
+            padding: 13px 14px;
+            border: 1.5px solid var(--line);
+            border-radius: 7px;
+            font-size: 14px;
+            margin-bottom: 14px;
+        }
+
+        .adm-login-box input:focus {
+            outline: none;
+            border-color: var(--ink);
+        }
+
+        .adm-login-box button {
+            width: 100%;
+            padding: 13px;
+            background: var(--ink);
+            color: #fff;
+            border: none;
+            border-radius: 7px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .adm-login-error {
+            color: var(--bad);
+            font-size: 13px;
+            margin-bottom: 12px;
+            display: none;
+        }
+
+        /* ============ ANA UYGULAMA İSKELETİ ============ */
+        .adm-app {
+            display: none;
+            min-height: 100vh;
+            grid-template-columns: 220px 1fr;
+        }
+
+        .adm-app.active {
+            display: grid;
+        }
+
+        .adm-sidebar {
+            background: var(--ink);
+            color: #fff;
+            padding: 28px 18px;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+        }
+
+        .adm-brand {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 3px;
+            margin-bottom: 4px;
+        }
+
+        .adm-brand-sub {
+            font-size: 11px;
+            color: rgba(255, 255, 255, .5);
+            letter-spacing: 1px;
+            margin-bottom: 36px;
+        }
+
+        .adm-nav-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            text-align: left;
+            padding: 12px 14px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, .7);
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 6px;
+            transition: background .15s, color .15s;
+        }
+
+        .adm-nav-btn:hover {
+            background: rgba(255, 255, 255, .08);
+            color: #fff;
+        }
+
+        .adm-nav-btn.active {
+            background: #fff;
+            color: var(--ink);
+        }
+
+        .adm-nav-footer {
+            position: absolute;
+            bottom: 28px;
+            width: 184px;
+        }
+
+        .adm-nav-footer a {
+            display: block;
+            font-size: 12.5px;
+            color: rgba(255, 255, 255, .55);
+            text-decoration: none;
+            margin-bottom: 10px;
+        }
+
+        .adm-nav-footer a:hover {
+            color: #fff;
+        }
+
+        .adm-nav-footer button {
+            background: none;
+            border: 1px solid rgba(255, 255, 255, .3);
+            color: rgba(255, 255, 255, .8);
+            font-size: 12.5px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .adm-main {
+            padding: 34px 40px;
+            overflow-x: hidden;
+        }
+
+        .adm-view {
+            display: none;
+        }
+
+        .adm-view.active {
+            display: block;
+        }
+
+        .adm-view-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 26px;
+        }
+
+        .adm-view-header h2 {
+            font-size: 24px;
+            letter-spacing: -.3px;
+        }
+
+        .adm-toolbar {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .adm-input {
+            padding: 10px 14px;
+            border: 1.5px solid var(--line);
+            border-radius: 7px;
+            font-size: 13.5px;
+            min-width: 220px;
+        }
+
+        .adm-input:focus {
+            outline: none;
+            border-color: var(--ink);
+        }
+
+        .adm-btn {
+            padding: 10px 18px;
+            border-radius: 7px;
+            border: 1.5px solid var(--ink);
+            background: var(--ink);
+            color: #fff;
+            font-size: 13.5px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity .15s;
+            white-space: nowrap;
+        }
+
+        .adm-btn:hover {
+            opacity: .82;
+        }
+
+        .adm-btn.adm-btn-outline {
+            background: transparent;
+            color: var(--ink);
+        }
+
+        .adm-btn.adm-btn-danger {
+            background: var(--bad);
+            border-color: var(--bad);
+        }
+
+        .adm-btn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        .adm-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 22px;
+            flex-wrap: wrap;
+        }
+
+        .adm-tab {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1.5px solid var(--line);
+            background: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            color: #555;
+        }
+
+        .adm-tab.active {
+            background: var(--ink);
+            border-color: var(--ink);
+            color: #fff;
+        }
+
+        /* ============ SİPARİŞ KARTLARI ============ */
+        .adm-orders-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .adm-order-card {
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 20px 24px;
+        }
+
+        .adm-order-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-bottom: 14px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .adm-order-id {
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .adm-order-date {
+            font-size: 12.5px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .adm-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 6px 13px;
+            border-radius: 20px;
+        }
+
+        .adm-badge .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .adm-badge.good {
+            color: var(--good);
+            background: var(--good-bg);
+        }
+
+        .adm-badge.good .dot {
+            background: #2ecc71;
+        }
+
+        .adm-badge.wait {
+            color: #a5760a;
+            background: #fdf3de;
+        }
+
+        .adm-badge.wait .dot {
+            background: #e8ab2f;
+        }
+
+        .adm-order-body {
+            display: grid;
+            grid-template-columns: 1.1fr 1.4fr 1fr;
+            gap: 24px;
+        }
+
+        .adm-order-col h4 {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .adm-order-col p {
+            font-size: 13.5px;
+            line-height: 1.6;
+        }
+
+        .adm-item-row {
+            font-size: 13.5px;
+            padding: 6px 0;
+            border-bottom: 1px dashed var(--line);
+        }
+
+        .adm-item-row:last-child {
+            border-bottom: none;
+        }
+
+        .adm-item-meta {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .adm-cargo-form {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .adm-cargo-form input {
+            flex: 1;
+            padding: 9px 12px;
+            border: 1.5px solid var(--line);
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .adm-cargo-form button {
+            padding: 9px 14px;
+            border-radius: 6px;
+            border: none;
+            background: var(--ink);
+            color: #fff;
+            font-size: 12.5px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .adm-empty {
+            text-align: center;
+            color: var(--muted);
+            padding: 60px 0;
+            font-size: 14px;
+        }
+
+        /* ============ ÜRÜN LİSTESİ ============ */
+        .adm-products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+            gap: 20px;
+        }
+
+        .adm-product-card {
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .adm-product-img {
+            width: 100%;
+            aspect-ratio: 1;
+            background: #f2f1ee;
+            object-fit: cover;
+            display: block;
+        }
+
+        .adm-product-body {
+            padding: 14px 16px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .adm-product-name {
+            font-size: 13.5px;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 6px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .adm-product-id {
+            font-size: 11px;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .adm-product-price {
+            font-size: 15px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .adm-product-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 12px;
+        }
+
+        .adm-chip {
+            font-size: 10.5px;
+            font-weight: 700;
+            padding: 3px 9px;
+            border-radius: 12px;
+            background: var(--panel);
+            color: #555;
+        }
+
+        .adm-product-actions {
+            margin-top: auto;
+            display: flex;
+            gap: 8px;
+        }
+
+        .adm-product-actions button {
+            flex: 1;
+            padding: 8px 0;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1.5px solid var(--line);
+            background: #fff;
+        }
+
+        .adm-product-actions button.danger {
+            color: var(--bad);
+            border-color: #f3cfc9;
+        }
+
+        /* ============ ÜRÜN FORM MODALI ============ */
+        .adm-modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 10, 10, .5);
+            z-index: 999;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 40px 20px;
+            overflow-y: auto;
+        }
+
+        .adm-modal-overlay.active {
+            display: flex;
+        }
+
+        .adm-modal {
+            background: #fff;
+            width: 100%;
+            max-width: 720px;
+            border-radius: 12px;
+            padding: 32px;
+        }
+
+        .adm-modal h3 {
+            font-size: 19px;
+            margin-bottom: 4px;
+        }
+
+        .adm-modal .adm-modal-sub {
+            font-size: 12.5px;
+            color: var(--muted);
+            margin-bottom: 24px;
+        }
+
+        .adm-field {
+            margin-bottom: 18px;
+        }
+
+        .adm-field label {
+            display: block;
+            font-size: 12.5px;
+            font-weight: 700;
+            margin-bottom: 7px;
+            color: #333;
+        }
+
+        .adm-field input[type="text"],
+        .adm-field input[type="number"],
+        .adm-field textarea {
+            width: 100%;
+            padding: 11px 13px;
+            border: 1.5px solid var(--line);
+            border-radius: 7px;
+            font-size: 13.5px;
+            font-family: inherit;
+        }
+
+        .adm-field input:focus,
+        .adm-field textarea:focus {
+            outline: none;
+            border-color: var(--ink);
+        }
+
+        .adm-field textarea {
+            resize: vertical;
+            min-height: 70px;
+        }
+
+        .adm-row2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .adm-check-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 8px;
+            background: var(--panel);
+            border-radius: 8px;
+            padding: 14px;
+        }
+
+        .adm-check-grid label {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 12.5px;
+            font-weight: 500;
+            color: #333;
+            cursor: pointer;
+        }
+
+        .adm-color-block {
+            border: 1.5px solid var(--line);
+            border-radius: 9px;
+            padding: 16px;
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .adm-color-block-row {
+            display: grid;
+            grid-template-columns: 2fr 70px 100px;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .adm-color-block input[type="color"] {
+            width: 100%;
+            height: 40px;
+            padding: 2px;
+            border: 1.5px solid var(--line);
+            border-radius: 7px;
+            cursor: pointer;
+        }
+
+        .adm-remove-color {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: var(--bad);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .adm-add-color-btn {
+            width: 100%;
+            padding: 11px;
+            border: 1.5px dashed var(--line);
+            background: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #555;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .adm-toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .adm-modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 8px;
+            padding-top: 20px;
+            border-top: 1px solid var(--line);
+        }
+
+        .adm-form-error {
+            background: var(--bad-bg);
+            color: var(--bad);
+            font-size: 13px;
+            padding: 10px 14px;
+            border-radius: 7px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        /* ============ TOAST ============ */
+        .adm-toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--ink);
+            color: #fff;
+            padding: 13px 20px;
+            border-radius: 8px;
+            font-size: 13.5px;
+            font-weight: 600;
+            z-index: 2000;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all .25s ease;
+            pointer-events: none;
+        }
+
+        .adm-toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .adm-toast.error {
+            background: var(--bad);
+        }
+
+        @media (max-width: 900px) {
+            .adm-app {
+                grid-template-columns: 1fr;
+            }
+
+            .adm-sidebar {
+                position: static;
+                height: auto;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                overflow-x: auto;
+                padding: 16px;
+            }
+
+            .adm-brand,
+            .adm-brand-sub,
+            .adm-nav-footer {
+                display: none;
+            }
+
+            .adm-nav-btn {
+                margin-bottom: 0;
+                white-space: nowrap;
+            }
+
+            .adm-main {
+                padding: 24px 18px;
+            }
+
+            .adm-order-body {
+                grid-template-columns: 1fr;
+                gap: 14px;
+            }
+
+            .adm-row2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ============ GİRİŞ EKRANI ============ -->
+    <div class="adm-login-screen" id="adm-login-screen">
+        <div class="adm-login-box">
+            <h1>FEYZAY</h1>
+            <p>Admin Paneli</p>
+            <div class="adm-login-error" id="adm-login-error"></div>
+            <input type="password" id="adm-login-password" placeholder="Admin şifresi" autocomplete="current-password">
+            <button id="adm-login-btn">Giriş Yap</button>
+        </div>
+    </div>
+
+    <!-- ============ ANA UYGULAMA ============ -->
+    <div class="adm-app" id="adm-app">
+        <aside class="adm-sidebar">
+            <div class="adm-brand">FEYZAY</div>
+            <div class="adm-brand-sub">ADMIN PANELİ</div>
+
+            <button class="adm-nav-btn active" data-view="orders">Siparişler</button>
+            <button class="adm-nav-btn" data-view="products">Ürünler</button>
+
+            <div class="adm-nav-footer">
+                <a href="index.html">← Siteye Dön</a>
+                <button id="adm-logout-btn">Çıkış Yap</button>
+            </div>
+        </aside>
+
+        <main class="adm-main">
+
+            <!-- ================= SİPARİŞLER ================= -->
+            <section class="adm-view active" id="adm-view-orders">
+                <div class="adm-view-header">
+                    <h2>Siparişler</h2>
+                    <div class="adm-toolbar">
+                        <input type="text" class="adm-input" id="adm-order-search"
+                            placeholder="Sipariş no, isim veya e-posta ara...">
+                        <button class="adm-btn adm-btn-outline" id="adm-refresh-orders">Yenile</button>
+                        <button class="adm-btn" id="adm-export-btn">⬇ Excel İndir</button>
+                    </div>
+                </div>
+
+                <div class="adm-tabs">
+                    <button class="adm-tab active" data-status="all">Tümü</button>
+                    <button class="adm-tab" data-status="waiting">Hazırlanıyor</button>
+                    <button class="adm-tab" data-status="shipped">Kargoda</button>
+                </div>
+
+                <div class="adm-orders-list" id="adm-orders-list">
+                    <p class="adm-empty">Yükleniyor...</p>
+                </div>
+            </section>
+
+            <!-- ================= ÜRÜNLER ================= -->
+            <section class="adm-view" id="adm-view-products">
+                <div class="adm-view-header">
+                    <h2>Ürünler</h2>
+                    <div class="adm-toolbar">
+                        <input type="text" class="adm-input" id="adm-product-search"
+                            placeholder="Ürün adı veya ID ara...">
+                        <button class="adm-btn" id="adm-add-product-btn">+ Yeni Ürün Ekle</button>
+                    </div>
+                </div>
+
+                <div class="adm-products-grid" id="adm-products-grid">
+                    <p class="adm-empty">Yükleniyor...</p>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ============ ÜRÜN FORM MODALI ============ -->
+    <div class="adm-modal-overlay" id="adm-product-modal">
+        <div class="adm-modal">
+            <h3 id="adm-modal-title">Yeni Ürün Ekle</h3>
+            <p class="adm-modal-sub">Sitede kullandığımız tüm alanları buradan doldurabilirsiniz.</p>
+            <div class="adm-form-error" id="adm-form-error"></div>
+
+            <form id="adm-product-form">
+                <div class="adm-row2">
+                    <div class="adm-field">
+                        <label>Ürün ID</label>
+                        <input type="text" id="f-id" placeholder="ör. BND-014">
+                    </div>
+                    <div class="adm-field">
+                        <label>Fiyat (TL)</label>
+                        <input type="number" id="f-price" step="0.01" min="0" placeholder="ör. 249.90">
+                    </div>
+                </div>
+
+                <div class="adm-field">
+                    <label>Ürün Adı</label>
+                    <input type="text" id="f-name" placeholder="ör. Kadın Pamuklu Penye Bandana">
+                </div>
+
+                <div class="adm-field">
+                    <label>Cinsiyet</label>
+                    <div class="adm-check-grid" id="f-gender-grid">
+                        <label><input type="checkbox" value="kadın"> Kadın</label>
+                        <label><input type="checkbox" value="kız"> Kız</label>
+                        <label><input type="checkbox" value="erkek"> Erkek</label>
+                        <label><input type="checkbox" value="unisex"> Unisex</label>
+                    </div>
+                </div>
+
+                <div class="adm-field">
+                    <label>Kategoriler</label>
+                    <div class="adm-check-grid" id="f-category-grid"></div>
+                </div>
+
+                <div class="adm-field">
+                    <label>Ek etiketler (virgülle ayırın, opsiyonel)</label>
+                    <input type="text" id="f-extra-tags" placeholder="ör. yeni sezon, indirimli">
+                </div>
+
+                <div class="adm-field">
+                    <label>Bedenler (virgülle ayırın)</label>
+                    <input type="text" id="f-sizes" placeholder="ör. Standart, S/M, L/XL">
+                </div>
+
+                <div class="adm-field">
+                    <label>Açıklama (opsiyonel)</label>
+                    <textarea id="f-description" placeholder="Ürün detay sayfasında gösterilecek açıklama"></textarea>
+                </div>
+
+                <div class="adm-toggle-row">
+                    <input type="checkbox" id="f-has-colors" checked>
+                    <label for="f-has-colors" style="margin:0; cursor:pointer;">Bu ürünün renk seçenekleri var</label>
+                </div>
+
+                <div id="f-colors-section">
+                    <div id="f-colors-list"></div>
+                    <button type="button" class="adm-add-color-btn" id="f-add-color">+ Renk Ekle</button>
+                </div>
+
+                <div id="f-legacy-section" style="display:none;">
+                    <div class="adm-field">
+                        <label>Stok Adedi</label>
+                        <input type="number" id="f-legacy-stock" min="0" placeholder="ör. 45">
+                    </div>
+                    <div class="adm-field">
+                        <label>Görsel Adresleri (her satıra bir tane)</label>
+                        <textarea id="f-legacy-images" placeholder="https://... veya \products\... yolu"></textarea>
+                    </div>
+                </div>
+
+                <div class="adm-modal-actions">
+                    <button type="button" class="adm-btn adm-btn-outline" id="f-cancel-btn">Vazgeç</button>
+                    <button type="submit" class="adm-btn" id="f-submit-btn">Ürünü Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="adm-toast" id="adm-toast"></div>
+
+    <script>
+        // =====================================================================
+        // Bu panel yalnızca /api/admin/* uçlarını kullanır (server.js içinde
+        // tanımlı). Her istekte "x-admin-key" header'ı gönderilir; sunucu bunu
+        // .env dosyasındaki ADMIN_PASSWORD ile karşılaştırır.
+        // =====================================================================
+
+        // Site genelinde kullanılan kategori listesi (base.js ile aynı tutulmalı)
+        const KATEGORI_LISTESI = [
+            { filter: 'tesettür bone', label: 'Tesettür Bone' },
+            { filter: 'tesettür alt - üst takım', label: 'Tesettür Alt - Üst Takım' },
+            { filter: 'tesettür bluz', label: 'Tesettür Bluz' },
+            { filter: 'bandana', label: 'Bandana' },
+            { filter: 'bere', label: 'Bere' },
+            { filter: 'tayt', label: 'Tayt' },
+            { filter: 'boyunluk', label: 'Boyunluk' },
+            { filter: 'atkı & bere set', label: 'Atkı & Bere Set' },
+            { filter: 'şapka', label: 'Şapka' },
+            { filter: 'saç bandı', label: 'Saç Bandı' },
+            { filter: 'pijama takımı', label: 'Pijama Takımı' },
+            { filter: 't-shirt', label: 'T-Shirt' },
+            { filter: 'bluz', label: 'Bluz' },
+            { filter: 'çorap', label: 'Çorap' },
+            { filter: 'alt - üst takım', label: 'Alt - Üst Takım' },
+            { filter: 'şort & bermuda', label: 'Şort & Bermuda' },
+            { filter: 'spor t-shirt', label: 'Spor T-Shirt' },
+            { filter: 'spor alt - üst takım', label: 'Spor Alt - Üst Takım' },
+            { filter: 'tesettür şal', label: 'Tesettür Şal' },
+            { filter: 'şal', label: 'Şal' },
+            { filter: 'atkı & bere & eldiven set', label: 'Atkı & Bere & Eldiven Set' },
+            { filter: 'kostüm', label: 'Kostüm' }
+        ];
+        const GENDER_TAGS = ['kadın', 'kız', 'erkek', 'unisex'];
+
+        let adminKey = localStorage.getItem('feyzay_admin_key') || '';
+        let butunSiparisler = [];
+        let butunUrunlerAdmin = [];
+        let aktifSiparisTab = 'all';
+        let editingProductId = null; // null => yeni ürün ekleniyor
+
+        // ---------- Yardımcılar ----------
+        function toast(msg, type) {
+            const el = document.getElementById('adm-toast');
+            el.textContent = msg;
+            el.className = 'adm-toast show' + (type === 'error' ? ' error' : '');
+            setTimeout(() => el.classList.remove('show'), 2600);
+        }
+
+        async function adminFetch(url, options = {}) {
+            const res = await fetch(url, {
+                ...options,
+                headers: {
+                    ...(options.headers || {}),
+                    'x-admin-key': adminKey
+                }
+            });
+            if (res.status === 401 || res.status === 503) {
+                const data = await res.json().catch(() => ({}));
+                if (res.status === 401) {
+                    localStorage.removeItem('feyzay_admin_key');
+                    showLogin(data.message || 'Oturum sona erdi, tekrar giriş yapın.');
+                } else {
+                    showLogin(data.message || 'Admin paneli aktif değil.');
+                }
+                throw new Error(data.message || 'Yetkisiz');
+            }
+            return res;
+        }
+
+        function showLogin(errorMsg) {
+            document.getElementById('adm-app').classList.remove('active');
+            document.getElementById('adm-login-screen').style.display = 'flex';
+            const errEl = document.getElementById('adm-login-error');
+            if (errorMsg) {
+                errEl.textContent = errorMsg;
+                errEl.style.display = 'block';
+            } else {
+                errEl.style.display = 'none';
+            }
+        }
+
+        function showApp() {
+            document.getElementById('adm-login-screen').style.display = 'none';
+            document.getElementById('adm-app').classList.add('active');
+            yukleSiparisler();
+            yukleUrunler();
+        }
+
+        // ---------- Giriş ----------
+        async function girisYap() {
+            const pw = document.getElementById('adm-login-password').value;
+            if (!pw) return;
+            const btn = document.getElementById('adm-login-btn');
+            btn.disabled = true;
+            btn.textContent = 'Kontrol ediliyor...';
+            try {
+                const res = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: pw })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    adminKey = pw;
+                    localStorage.setItem('feyzay_admin_key', pw);
+                    showApp();
+                } else {
+                    document.getElementById('adm-login-error').textContent = data.message || 'Şifre hatalı.';
+                    document.getElementById('adm-login-error').style.display = 'block';
+                }
+            } catch (e) {
+                document.getElementById('adm-login-error').textContent = 'Sunucuya bağlanılamadı.';
+                document.getElementById('adm-login-error').style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Giriş Yap';
+            }
+        }
+        document.getElementById('adm-login-btn').onclick = girisYap;
+        document.getElementById('adm-login-password').addEventListener('keydown', (e) => { if (e.key === 'Enter') girisYap(); });
+        document.getElementById('adm-logout-btn').onclick = () => {
+            localStorage.removeItem('feyzay_admin_key');
+            adminKey = '';
+            showLogin();
+        };
+
+        // ---------- Sekme geçişleri ----------
+        document.querySelectorAll('.adm-nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.adm-nav-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const view = btn.dataset.view;
+                document.querySelectorAll('.adm-view').forEach(v => v.classList.remove('active'));
+                document.getElementById('adm-view-' + view).classList.add('active');
+            });
+        });
+
+        // =====================================================================
+        // ============================ SİPARİŞLER ============================
+        // =====================================================================
+        async function yukleSiparisler() {
+            const list = document.getElementById('adm-orders-list');
+            try {
+                const res = await adminFetch('/api/admin/orders');
+                const data = await res.json();
+                butunSiparisler = data.orders || [];
+                siparisleriCiz();
+            } catch (e) {
+                if (list) list.innerHTML = '<p class="adm-empty">Siparişler yüklenemedi.</p>';
+            }
+        }
+
+        function siparisleriCiz() {
+            const list = document.getElementById('adm-orders-list');
+            const arama = document.getElementById('adm-order-search').value.toLowerCase().trim();
+
+            let gosterilecek = butunSiparisler.filter(o => {
+                if (aktifSiparisTab === 'waiting' && o.cargoState === 1) return false;
+                if (aktifSiparisTab === 'shipped' && o.cargoState !== 1) return false;
+                if (arama) {
+                    const hedef = `${o.id} ${o.firstName} ${o.lastName} ${o.email}`.toLowerCase();
+                    if (!hedef.includes(arama)) return false;
+                }
+                return true;
+            });
+
+            if (gosterilecek.length === 0) {
+                list.innerHTML = '<p class="adm-empty">Bu kritere uygun sipariş bulunamadı.</p>';
+                return;
+            }
+
+            list.innerHTML = gosterilecek.map(o => {
+                const tarih = new Date(o.createdAt).toLocaleString('tr-TR');
+                const urunlerHtml = (o.cartData || []).map(item => `
+                    <div class="adm-item-row">
+                        <strong>${item.name}</strong> × ${item.adet}
+                        <div class="adm-item-meta">${[item.beden, item.renk].filter(Boolean).join(' · ') || '—'} · ID: ${item.id}</div>
+                    </div>
+                `).join('') || '<p class="adm-item-meta">Ürün bilgisi yok.</p>';
+
+                const kargoBadge = o.cargoState === 1
+                    ? `<span class="adm-badge good"><span class="dot"></span>Kargoya Verildi</span>`
+                    : `<span class="adm-badge wait"><span class="dot"></span>Hazırlanıyor</span>`;
+
+                const kargoAlani = o.cargoState === 1
+                    ? `
+                        <p style="font-size:13px; margin-top:4px;">Takip Kodu: <strong>${o.cargoTrackingCode}</strong></p>
+                        <div class="adm-cargo-form">
+                            <input type="text" placeholder="Yeni takip kodu" id="cargo-input-${o.id}">
+                            <button onclick="kargoyaVer(${o.id})">Güncelle</button>
+                        </div>
+                    `
+                    : `
+                        <div class="adm-cargo-form">
+                            <input type="text" placeholder="Kargo takip kodu" id="cargo-input-${o.id}">
+                            <button onclick="kargoyaVer(${o.id})">Kargoya Ver</button>
+                        </div>
+                    `;
+
+                return `
+                    <div class="adm-order-card">
+                        <div class="adm-order-top">
+                            <div>
+                                <div class="adm-order-id">Sipariş #${o.id}</div>
+                                <div class="adm-order-date">${tarih}</div>
+                            </div>
+                            ${kargoBadge}
+                        </div>
+                        <div class="adm-order-body">
+                            <div class="adm-order-col">
+                                <h4>Müşteri</h4>
+                                <p>${o.firstName} ${o.lastName}<br>${o.email || '—'}</p>
+                            </div>
+                            <div class="adm-order-col">
+                                <h4>Ürünler</h4>
+                                ${urunlerHtml}
+                            </div>
+                            <div class="adm-order-col">
+                                <h4>Teslimat Adresi</h4>
+                                <p>${o.street || ''}<br>${o.district || ''} / ${o.city || ''}<br>${o.zipcode || ''}</p>
+                                ${kargoAlani}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function kargoyaVer(orderId) {
+            const input = document.getElementById('cargo-input-' + orderId);
+            const kod = input.value.trim();
+            if (!kod) return toast('Lütfen takip kodu girin.', 'error');
+            try {
+                const res = await adminFetch('/api/admin/orders/' + orderId + '/cargo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ trackingCode: kod })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    toast('Sipariş #' + orderId + ' güncellendi.');
+                    yukleSiparisler();
+                } else {
+                    toast(data.message || 'Güncellenemedi.', 'error');
+                }
+            } catch (e) { }
+        }
+        window.kargoyaVer = kargoyaVer;
+
+        document.getElementById('adm-order-search').addEventListener('input', siparisleriCiz);
+        document.getElementById('adm-refresh-orders').onclick = yukleSiparisler;
+        document.querySelectorAll('.adm-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.adm-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                aktifSiparisTab = tab.dataset.status;
+                siparisleriCiz();
+            });
+        });
+
+        document.getElementById('adm-export-btn').onclick = async () => {
+            const btn = document.getElementById('adm-export-btn');
+            btn.disabled = true;
+            btn.textContent = 'Hazırlanıyor...';
+            try {
+                const res = await adminFetch('/api/admin/orders/export');
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'Feyzay_Siparisler.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+            } catch (e) {
+                toast('Excel indirilemedi.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '⬇ Excel İndir';
+            }
+        };
+
+        // =====================================================================
+        // ============================= ÜRÜNLER ==============================
+        // =====================================================================
+        async function yukleUrunler() {
+            const grid = document.getElementById('adm-products-grid');
+            try {
+                const res = await adminFetch('/api/admin/products');
+                const data = await res.json();
+                butunUrunlerAdmin = data.products || [];
+                urunleriCiz();
+            } catch (e) {
+                if (grid) grid.innerHTML = '<p class="adm-empty">Ürünler yüklenemedi.</p>';
+            }
+        }
+
+        function urunGorsel(urun) {
+            if (urun.colors && urun.colors.length > 0 && urun.colors[0].images && urun.colors[0].images.length > 0) return urun.colors[0].images[0];
+            if (urun.images && urun.images.length > 0) return urun.images[0];
+            if (urun.image) return urun.image;
+            return '';
+        }
+
+        function urunStokToplam(urun) {
+            if (urun.colors && urun.colors.length > 0) return urun.colors.reduce((t, c) => t + (Number(c.stock) || 0), 0);
+            return Number(urun.stock) || 0;
+        }
+
+        function urunleriCiz() {
+            const grid = document.getElementById('adm-products-grid');
+            const arama = document.getElementById('adm-product-search').value.toLowerCase().trim();
+            let liste = butunUrunlerAdmin;
+            if (arama) {
+                liste = liste.filter(u => u.name.toLowerCase().includes(arama) || u.id.toLowerCase().includes(arama));
+            }
+            if (liste.length === 0) {
+                grid.innerHTML = '<p class="adm-empty">Ürün bulunamadı.</p>';
+                return;
+            }
+            grid.innerHTML = liste.map(u => `
+                <div class="adm-product-card">
+                    <img class="adm-product-img" src="${urunGorsel(u)}" alt="${u.name}" onerror="this.style.opacity=0">
+                    <div class="adm-product-body">
+                        <div class="adm-product-name">${u.name}</div>
+                        <div class="adm-product-id">ID: ${u.id} · Stok: ${urunStokToplam(u)}</div>
+                        <div class="adm-product-price">${Number(u.price).toFixed(2)} TL</div>
+                        <div class="adm-product-tags">${(u.tags || []).slice(0, 4).map(t => `<span class="adm-chip">${t}</span>`).join('')}</div>
+                        <div class="adm-product-actions">
+                            <button onclick="urunDuzenle('${u.id}')">Düzenle</button>
+                            <button class="danger" onclick="urunSil('${u.id}')">Sil</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('adm-product-search').addEventListener('input', urunleriCiz);
+
+        async function urunSil(id) {
+            if (!confirm('"' + id + '" ürününü silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) return;
+            try {
+                const res = await adminFetch('/api/admin/products/' + encodeURIComponent(id), { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    toast('Ürün silindi.');
+                    yukleUrunler();
+                } else {
+                    toast(data.message || 'Silinemedi.', 'error');
+                }
+            } catch (e) { }
+        }
+        window.urunSil = urunSil;
+
+        // ---------- Ürün formu ----------
+        const categoryGrid = document.getElementById('f-category-grid');
+        categoryGrid.innerHTML = KATEGORI_LISTESI.map(k => `<label><input type="checkbox" value="${k.filter}"> ${k.label}</label>`).join('');
+
+        function bosColorBlockEkle(data) {
+            const wrap = document.createElement('div');
+            wrap.className = 'adm-color-block';
+            wrap.innerHTML = `
+                <button type="button" class="adm-remove-color">Kaldır ✕</button>
+                <div class="adm-color-block-row">
+                    <input type="text" class="c-name" placeholder="Renk adı (ör. Bordo)" value="${data?.name || ''}">
+                    <input type="color" class="c-hex" value="${data?.hex || '#cccccc'}">
+                    <input type="number" class="c-stock" placeholder="Stok" min="0" value="${data?.stock ?? ''}">
+                </div>
+                <textarea class="c-images" placeholder="Görsel adresleri (her satıra bir tane)">${(data?.images || []).join('\n')}</textarea>
+            `;
+            wrap.querySelector('.adm-remove-color').onclick = () => wrap.remove();
+            document.getElementById('f-colors-list').appendChild(wrap);
+        }
+        document.getElementById('f-add-color').onclick = () => bosColorBlockEkle();
+
+        document.getElementById('f-has-colors').addEventListener('change', (e) => {
+            document.getElementById('f-colors-section').style.display = e.target.checked ? 'block' : 'none';
+            document.getElementById('f-legacy-section').style.display = e.target.checked ? 'none' : 'block';
+        });
+
+        function formuSifirla() {
+            document.getElementById('f-id').value = '';
+            document.getElementById('f-id').disabled = false;
+            document.getElementById('f-price').value = '';
+            document.getElementById('f-name').value = '';
+            document.getElementById('f-extra-tags').value = '';
+            document.getElementById('f-sizes').value = '';
+            document.getElementById('f-description').value = '';
+            document.getElementById('f-legacy-stock').value = '';
+            document.getElementById('f-legacy-images').value = '';
+            document.querySelectorAll('#f-gender-grid input, #f-category-grid input').forEach(cb => cb.checked = false);
+            document.getElementById('f-colors-list').innerHTML = '';
+            document.getElementById('f-has-colors').checked = true;
+            document.getElementById('f-colors-section').style.display = 'block';
+            document.getElementById('f-legacy-section').style.display = 'none';
+            document.getElementById('adm-form-error').style.display = 'none';
+            bosColorBlockEkle();
+        }
+
+        document.getElementById('adm-add-product-btn').onclick = () => {
+            editingProductId = null;
+            document.getElementById('adm-modal-title').textContent = 'Yeni Ürün Ekle';
+            formuSifirla();
+            document.getElementById('adm-product-modal').classList.add('active');
+        };
+
+        function urunDuzenle(id) {
+            const urun = butunUrunlerAdmin.find(u => u.id === id);
+            if (!urun) return;
+            editingProductId = id;
+            document.getElementById('adm-modal-title').textContent = 'Ürünü Düzenle';
+            formuSifirla();
+
+            document.getElementById('f-id').value = urun.id;
+            document.getElementById('f-price').value = urun.price;
+            document.getElementById('f-name').value = urun.name;
+            document.getElementById('f-sizes').value = (urun.sizes || []).join(', ');
+            document.getElementById('f-description').value = urun.description || '';
+
+            const tags = urun.tags || [];
+            document.querySelectorAll('#f-gender-grid input').forEach(cb => cb.checked = tags.includes(cb.value));
+            document.querySelectorAll('#f-category-grid input').forEach(cb => cb.checked = tags.includes(cb.value));
+            const bilinenler = new Set([...GENDER_TAGS, ...KATEGORI_LISTESI.map(k => k.filter)]);
+            const kalanTags = tags.filter(t => !bilinenler.has(t));
+            document.getElementById('f-extra-tags').value = kalanTags.join(', ');
+
+            document.getElementById('f-colors-list').innerHTML = '';
+            if (urun.colors && urun.colors.length > 0) {
+                document.getElementById('f-has-colors').checked = true;
+                document.getElementById('f-colors-section').style.display = 'block';
+                document.getElementById('f-legacy-section').style.display = 'none';
+                urun.colors.forEach(c => bosColorBlockEkle(c));
+            } else {
+                document.getElementById('f-has-colors').checked = false;
+                document.getElementById('f-colors-section').style.display = 'none';
+                document.getElementById('f-legacy-section').style.display = 'block';
+                document.getElementById('f-legacy-stock').value = urun.stock ?? '';
+                const imgs = (urun.images && urun.images.length > 0) ? urun.images : (urun.image ? [urun.image] : []);
+                document.getElementById('f-legacy-images').value = imgs.join('\n');
+                bosColorBlockEkle();
+            }
+
+            document.getElementById('adm-product-modal').classList.add('active');
+        }
+        window.urunDuzenle = urunDuzenle;
+
+        document.getElementById('f-cancel-btn').onclick = () => document.getElementById('adm-product-modal').classList.remove('active');
+
+        document.getElementById('adm-product-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const errEl = document.getElementById('adm-form-error');
+            errEl.style.display = 'none';
+
+            const id = document.getElementById('f-id').value.trim();
+            const name = document.getElementById('f-name').value.trim();
+            const priceRaw = document.getElementById('f-price').value;
+
+            if (!id || !name || priceRaw === '') {
+                errEl.textContent = 'Ürün ID, isim ve fiyat zorunludur.';
+                errEl.style.display = 'block';
+                return;
+            }
+
+            const genderTags = Array.from(document.querySelectorAll('#f-gender-grid input:checked')).map(cb => cb.value);
+            const categoryTags = Array.from(document.querySelectorAll('#f-category-grid input:checked')).map(cb => cb.value);
+            const extraTags = document.getElementById('f-extra-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+            const tags = [...genderTags, ...categoryTags, ...extraTags];
+
+            const sizes = document.getElementById('f-sizes').value.split(',').map(s => s.trim()).filter(Boolean);
+
+            const urun = {
+                id,
+                name,
+                price: parseFloat(priceRaw),
+                tags,
+            };
+            if (sizes.length > 0) urun.sizes = sizes;
+            const description = document.getElementById('f-description').value.trim();
+            if (description) urun.description = description;
+
+            if (document.getElementById('f-has-colors').checked) {
+                const colorBlocks = Array.from(document.querySelectorAll('#f-colors-list .adm-color-block'));
+                const colors = colorBlocks.map(block => ({
+                    name: block.querySelector('.c-name').value.trim(),
+                    hex: block.querySelector('.c-hex').value,
+                    stock: Number(block.querySelector('.c-stock').value) || 0,
+                    images: block.querySelector('.c-images').value.split('\n').map(s => s.trim()).filter(Boolean)
+                })).filter(c => c.name);
+
+                if (colors.length === 0) {
+                    errEl.textContent = 'En az bir renk girin ya da "Renk seçenekleri var" kutusunu kaldırıp tekli ürün olarak kaydedin.';
+                    errEl.style.display = 'block';
+                    return;
+                }
+                urun.colors = colors;
+            } else {
+                urun.stock = Number(document.getElementById('f-legacy-stock').value) || 0;
+                const imgs = document.getElementById('f-legacy-images').value.split('\n').map(s => s.trim()).filter(Boolean);
+                if (imgs.length > 1) urun.images = imgs;
+                else if (imgs.length === 1) urun.image = imgs[0];
+            }
+
+            const submitBtn = document.getElementById('f-submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Kaydediliyor...';
+
+            try {
+                let res;
+                if (editingProductId) {
+                    res = await adminFetch('/api/admin/products/' + encodeURIComponent(editingProductId), {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(urun)
+                    });
+                } else {
+                    res = await adminFetch('/api/admin/products', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(urun)
+                    });
+                }
+                const data = await res.json();
+                if (data.success) {
+                    toast(editingProductId ? 'Ürün güncellendi.' : 'Ürün eklendi.');
+                    document.getElementById('adm-product-modal').classList.remove('active');
+                    yukleUrunler();
+                } else {
+                    errEl.textContent = data.message || 'Bir hata oluştu.';
+                    errEl.style.display = 'block';
+                }
+            } catch (e) {
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Ürünü Kaydet';
+            }
+        });
+
+        // ---------- Başlangıç ----------
+        if (adminKey) {
+            showApp();
+        } else {
+            showLogin();
+        }
+    </script>
+</body>
+
+</html>

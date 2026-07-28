@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feyzay | Ürünler</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<div class="sepet-overlay" id="sepet-overlay"></div>
+<div class="sepet-sidebar" id="sepet-sidebar">
+    <div class="sepet-header">
+        <h3>Alışveriş Sepeti</h3>
+        <button id="sepet-kapat">&times;</button>
+    </div>
+
+    <div class="sepet-icerik" id="sepet-icerik">
+        <p style="text-align: center; color: #888; margin-top: 20px;">Sepetiniz şu an boş.</p>
+    </div>
+
+    <div class="sepet-footer">
+        <div class="sepet-toplam-kutu">
+            <span>Toplam:</span>
+            <span id="sepet-toplam-fiyat">0.00 TL</span>
+        </div>
+        <button class="satin-al-btn">Ödeme Yap</button>
+    </div>
+</div>
+
+<body class="products-page">
+
+    <header class="site-header">
+        <a href="index.html" class="logo" style="text-decoration: none;">FEYZAY</a>
+        <nav class="navigation">
+            <a href="index.html">Ana Sayfa</a>
+            <a href="urunler.html">Ürünler</a>
+            <a href="#" id="sepet-ac-btn">Sepet (0)</a>
+            <a href="kayit.html">Giriş Yap</a>
+        </nav>
+    </header>
+    <div class="gender-filter-bar">
+        <button class="gender-btn active" data-gender="all">Tümü</button>
+        <button class="gender-btn" data-gender="kadin">Kadın</button>
+        <button class="gender-btn" data-gender="erkek">Erkek</button>
+        <button class="gender-btn" data-gender="unisex">Unisex</button>
+    </div>
+
+    <main class="products-page-layout">
+
+        <aside class="sidebar-filter">
+            <h3>Kategoriler</h3>
+            <div class="filter-container-vertical" id="kategori-listesi">
+            </div>
+        </aside>
+
+        <section class="products-main">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
+                <h1 class="section-title" style="text-align: left; margin: 0;">Tüm Koleksiyon</h1>
+                <input type="text" id="product-search-input" placeholder="Ürün ismine göre ara..."
+                    style="padding: 12px 16px; border: 1px solid #ddd; border-radius: 6px; width: 100%; max-width: 320px; font-size: 14px; outline: none; transition: border-color 0.3s;"
+                    onfocus="this.style.borderColor='#111'" onblur="this.style.borderColor='#ddd'">
+            </div>
+
+            <div class="products-grid" id="urun-kutusu">
+            </div>
+        </section>
+
+    </main>
+    <script src="base.js"></script>
+</body>
+
+</html>
