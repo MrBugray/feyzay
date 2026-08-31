@@ -324,12 +324,17 @@ window.viewOrdersModal = async function () {
 
     overlay = document.createElement('div');
     overlay.className = 'feyzay-modal-overlay';
-    overlay.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); z-index:9999; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.3s ease;';
+    overlay.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:9999; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.3s ease;';
 
+    // X butonu sağ üste eklendi
     overlay.innerHTML = `
-        <div class="feyzay-modal" style="background:#fff; padding:25px; border-radius:8px; width:90%; max-width:550px; box-shadow:0 10px 25px rgba(0,0,0,0.2); transform:translateY(-20px); transition:transform 0.3s ease; max-height:80vh; overflow-y:auto;">
-            <h3>Sipariş Geçmişim</h3>
-            <div id="orders-list-container" style="margin-top:15px;">Yükleniyor...</div>
+        <div class="feyzay-modal" style="position:relative; background:#fff; padding:25px; border-radius:8px; width:90%; max-width:550px; box-shadow:0 10px 25px rgba(0,0,0,0.2); transform:translateY(-20px); transition:transform 0.3s ease; max-height:80vh; overflow-y:auto;">
+            
+            <button id="orders-btn-x" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:24px; cursor:pointer; color:#888; line-height:1; padding:0; transition:color 0.2s;">&times;</button>
+            
+            <h3 style="margin-top:0; color:#111;">Sipariş Geçmişim</h3>
+            <div id="orders-list-container" style="margin-top:15px; color:#333;">Yükleniyor...</div>
+            
             <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
                 <button id="orders-btn-close" style="padding:10px 15px; border:none; background:#111; color:#fff; border-radius:4px; cursor:pointer; font-weight:bold;">Kapat</button>
             </div>
@@ -342,13 +347,25 @@ window.viewOrdersModal = async function () {
         overlay.querySelector('.feyzay-modal').style.transform = 'translateY(0)';
     });
 
-    document.getElementById('orders-btn-close').onclick = () => {
+    const closeFunc = () => {
         overlay.style.opacity = '0';
         overlay.querySelector('.feyzay-modal').style.transform = 'translateY(-20px)';
         setTimeout(() => overlay.remove(), 300);
     };
 
+    document.getElementById('orders-btn-close').onclick = closeFunc;
+    document.getElementById('orders-btn-x').onclick = closeFunc;
+    document.getElementById('orders-btn-x').onmouseover = function () { this.style.color = '#111'; };
+    document.getElementById('orders-btn-x').onmouseout = function () { this.style.color = '#888'; };
+
     try {
+        // Mini fotolar için products.json'dan verileri çekiyoruz
+        let allProducts = [];
+        try {
+            const prodRes = await fetch('products.json');
+            allProducts = await prodRes.json();
+        } catch (e) { console.log('Ürün eşleşmesi için json yüklenemedi.'); }
+
         const response = await fetch('/api/user/orders', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -361,21 +378,55 @@ window.viewOrdersModal = async function () {
             let html = '';
             result.orders.forEach(order => {
                 let cargoText = order.cargoState === 1 ? `Kargoya Verildi (${order.cargoTrackingCode || 'Takip No Yok'})` : 'Hazırlanıyor';
-                let itemsText = order.cartData.map(item => `${item.name} (${item.beden}, ${item.adet} Adet)`).join(', ');
+
+                // Siparişteki her ürün için fotoğrafı buluyoruz
+                let itemsHtml = order.cartData.map(item => {
+                    let imgSrc = 'img/no-image.jpg'; // Bulunamazsa varsayılan
+                    let product = allProducts.find(x => x.id === item.id);
+
+                    if (product) {
+                        if (product.colors && product.colors.length > 0) {
+                            let cObj = product.colors.find(c => c.name === item.renk) || product.colors[0];
+                            if (cObj && cObj.images && cObj.images.length > 0) imgSrc = cObj.images[0];
+                        } else if (product.images && product.images.length > 0) {
+                            imgSrc = product.images[0];
+                        } else if (product.image) {
+                            imgSrc = product.image;
+                        }
+                    }
+
+                    return `
+                        <div style="display:flex; align-items:center; gap:12px; margin-top:10px; padding-top:10px; border-top:1px dashed #eee;">
+                            <img src="${imgSrc}" style="width:50px; height:65px; object-fit:cover; border-radius:4px; border:1px solid #ddd;">
+                            <div>
+                                <div style="font-weight:600; font-size:13px; margin-bottom:4px;">${item.name}</div>
+                                <div style="color:#777; font-size:12px;">${item.beden} ${item.renk ? ' | ' + item.renk : ''} | ${item.adet} Adet</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
                 html += `
-                    <div style="padding:15px; border:1px solid #eee; border-radius:6px; margin-bottom:10px; font-size:14px;">
-                        <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:5px;"><span>Sipariş: #${order.id}</span><span>${new Date(order.createdAt).toLocaleDateString('tr-TR')}</span></div>
-                        <div><strong>Ürünler:</strong> ${itemsText}</div>
-                        <div><strong>Kargo:</strong> <span style="color:${order.cargoState === 1 ? '#2ecc71' : '#f39c12'};">${cargoText}</span></div>
+                    <div style="padding:15px; border:1px solid #eee; border-radius:6px; margin-bottom:10px; font-size:14px; background:#fcfcfc;">
+                        <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:5px;">
+                            <span>Sipariş: #${order.id}</span>
+                            <span>${new Date(order.createdAt).toLocaleDateString('tr-TR')}</span>
+                        </div>
+                        <div style="margin-bottom:10px; font-size:13px;">
+                            <strong>Kargo Durumu:</strong> <span style="color:${order.cargoState === 1 ? '#2ecc71' : '#f39c12'};">${cargoText}</span>
+                        </div>
+                        <div style="background:#fff; padding:10px; border-radius:4px; border:1px solid #f0f0f0;">
+                            ${itemsHtml}
+                        </div>
                     </div>
                 `;
             });
             container.innerHTML = html;
         } else {
-            container.innerHTML = '<p>Siparişiniz bulunmuyor.</p>';
+            container.innerHTML = '<p style="color:#666;">Siparişiniz bulunmuyor.</p>';
         }
     } catch (e) {
-        document.getElementById('orders-list-container').innerHTML = '<p>Siparişler yüklenirken hata oluştu.</p>';
+        document.getElementById('orders-list-container').innerHTML = '<p style="color:#e74c3c;">Siparişler yüklenirken hata oluştu.</p>';
     }
 };
 

@@ -7,14 +7,138 @@
     <title>Ürün Detayı - Feyzay</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .pdp-body {
-            background: #fff;
+        /* ============ DARK MODE & HEADER (Siyah Tema) ============ */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #111 !important;
+            color: #fff !important;
         }
 
+        .babygiz-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #111;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid #222;
+        }
+
+        .top-bar {
+            background-color: #000;
+            color: #fff;
+            text-align: center;
+            padding: 8px 15px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #222;
+        }
+
+        .header-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 50px;
+            border-bottom: 1px solid #333;
+        }
+
+        .header-left {
+            flex: 1;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-feyzay {
+            font-size: 32px;
+            font-weight: 900;
+            letter-spacing: 5px;
+            color: #fff !important;
+            text-decoration: none;
+        }
+
+        .header-right {
+            flex: 2;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .search-wrapper {
+            position: relative;
+        }
+
+        .search-input {
+            padding: 10px 15px 10px 35px;
+            border: 1px solid #444;
+            border-radius: 20px;
+            outline: none;
+            font-size: 13px;
+            width: 100%;
+            min-width: 220px;
+            transition: border-color 0.3s, background-color 0.3s;
+            background: #222 url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="%23999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>') no-repeat 12px center;
+            color: #fff;
+        }
+
+        .search-input:focus {
+            border-color: #fff;
+            background-color: #111;
+        }
+
+        .navigation a,
+        .navigation .user-menu-container {
+            color: #fff !important;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+
+        .navigation a:hover {
+            opacity: 0.7;
+        }
+
+        .header-nav {
+            display: flex;
+            justify-content: center;
+            gap: 35px;
+            padding: 15px 20px;
+            background: #111;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .header-nav a {
+            color: #ccc;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            transition: color 0.2s;
+        }
+
+        .header-nav a:hover {
+            color: #fff;
+        }
+
+        /* ============ ÜRÜN DETAY SAYFASI (PDP) ============ */
+        .pdp-body {
+            background: #111;
+        }
+
+        /* Üst Menünün Altında Kalmaması İçin Padding Ayarı */
         .pdp-container {
             max-width: 1360px;
             margin: 0 auto;
-            padding: 130px 50px 100px;
+            padding: 180px 50px 100px;
+            /* Header boşluğunu artırdık */
         }
 
         .pdp-breadcrumb {
@@ -28,21 +152,21 @@
         }
 
         .pdp-breadcrumb a {
-            color: #8a8a8a;
+            color: #aaa;
             text-decoration: none;
             transition: color .15s;
         }
 
         .pdp-breadcrumb a:hover {
-            color: #111;
+            color: #fff;
         }
 
         .pdp-breadcrumb .pdp-sep {
-            color: #d8d8d8;
+            color: #555;
         }
 
         .pdp-breadcrumb .pdp-current {
-            color: #111;
+            color: #fff;
             font-weight: 600;
             max-width: 320px;
             overflow: hidden;
@@ -57,13 +181,14 @@
             align-items: flex-start;
         }
 
+        /* Sol Galeri Küçük Fotoları */
         .pdp-thumbs {
             display: flex;
             flex-direction: column;
             gap: 12px;
             position: sticky;
-            top: 130px;
-            max-height: calc(100vh - 160px);
+            top: 180px;
+            max-height: calc(100vh - 200px);
             overflow-y: auto;
             scrollbar-width: thin;
         }
@@ -74,7 +199,7 @@
             border-radius: 8px;
             overflow: hidden;
             cursor: pointer;
-            background: #f6f5f3;
+            background: #1a1a1a;
             border: 2px solid transparent;
             padding: 0;
             transition: border-color .18s ease, transform .18s ease;
@@ -89,25 +214,26 @@
         }
 
         .pdp-thumb:hover {
-            border-color: #ccc;
+            border-color: #666;
         }
 
         .pdp-thumb.active {
-            border-color: #111;
+            border-color: #fff;
         }
 
+        /* Ana Fotoğraf Alanı */
         .pdp-stage {
             position: relative;
             width: 100%;
             aspect-ratio: 1;
-            border-radius: 16px;
+            border-radius: 12px;
             overflow: hidden;
-            background-color: #f8f7f5;
-            background-repeat: no-repeat;
+            background-color: #1a1a1a;
             cursor: zoom-in;
             display: flex;
             align-items: center;
             justify-content: center;
+            border: 1px solid #333;
         }
 
         .pdp-stage img {
@@ -126,23 +252,21 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            background: rgba(17, 17, 17, .78);
+            background: rgba(17, 17, 17, .85);
             color: #fff;
             font-size: 12px;
             font-weight: 500;
             padding: 8px 14px;
             border-radius: 20px;
             pointer-events: none;
-            opacity: .95;
-            letter-spacing: .2px;
         }
 
         .pdp-counter-badge {
             position: absolute;
             top: 16px;
             left: 16px;
-            background: rgba(255, 255, 255, .92);
-            color: #111;
+            background: rgba(0, 0, 0, .7);
+            color: #fff;
             font-size: 12px;
             font-weight: 700;
             padding: 6px 12px;
@@ -162,25 +286,25 @@
             height: 38px;
             border: none;
             border-radius: 50%;
-            background: rgba(255, 255, 255, .92);
-            color: #111;
+            background: rgba(0, 0, 0, .7);
+            color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             z-index: 5;
-            transition: background .15s ease, transform .15s ease;
+            transition: background .15s, transform .15s;
         }
 
         .pdp-expand-btn:hover {
-            background: #fff;
+            background: #111;
             transform: scale(1.06);
         }
 
-        /* Bilgi paneli */
+        /* Sağ Bilgi Paneli */
         .pdp-info {
             position: sticky;
-            top: 130px;
+            top: 180px;
         }
 
         .pdp-eyebrow {
@@ -195,13 +319,13 @@
         }
 
         .pdp-eyebrow:hover {
-            color: #111;
+            color: #fff;
         }
 
         .pdp-title {
             font-size: 30px;
             font-weight: 700;
-            color: #111;
+            color: #fff;
             line-height: 1.3;
             margin-bottom: 14px;
             letter-spacing: -.2px;
@@ -210,13 +334,13 @@
         .pdp-price {
             font-size: 27px;
             font-weight: 800;
-            color: #111;
+            color: #fff;
             margin-bottom: 6px;
         }
 
         .pdp-sku {
             font-size: 12px;
-            color: #a8a8a8;
+            color: #888;
             margin-bottom: 18px;
         }
 
@@ -238,8 +362,9 @@
         }
 
         .pdp-stock.in {
-            color: #1a8f4c;
-            background: #e9f9ef;
+            color: #2ecc71;
+            background: rgba(46, 204, 113, 0.15);
+            border: 1px solid rgba(46, 204, 113, 0.3);
         }
 
         .pdp-stock.in .dot {
@@ -247,8 +372,9 @@
         }
 
         .pdp-stock.out {
-            color: #c0392b;
-            background: #fdecea;
+            color: #e74c3c;
+            background: rgba(231, 76, 60, 0.15);
+            border: 1px solid rgba(231, 76, 60, 0.3);
         }
 
         .pdp-stock.out .dot {
@@ -257,7 +383,7 @@
 
         .pdp-divider {
             height: 1px;
-            background: #ececec;
+            background: #333;
             margin: 6px 0 24px;
         }
 
@@ -266,10 +392,11 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: .6px;
-            color: #444;
+            color: #aaa;
             margin-bottom: 12px;
         }
 
+        /* ====== YENİ: RENK SEÇİMİ İÇİN MİNİ FOTOĞRAFLAR ====== */
         .pdp-colors {
             display: flex;
             flex-wrap: wrap;
@@ -279,40 +406,40 @@
 
         .pdp-color-swatch {
             position: relative;
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
+            width: 55px;
+            /* Daha dikdörtgen bir görünüm için */
+            height: 75px;
+            border-radius: 6px;
             border: 2px solid transparent;
-            padding: 3px;
+            padding: 2px;
             cursor: pointer;
-            background-clip: content-box;
-            box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .08);
+            background: none;
             transition: border-color .15s ease, transform .12s ease;
         }
 
+        .pdp-color-swatch img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
         .pdp-color-swatch:hover {
-            transform: scale(1.07);
+            transform: scale(1.05);
         }
 
         .pdp-color-swatch.active {
-            border-color: #111;
-        }
-
-        .pdp-color-swatch.active::after {
-            content: '';
-            position: absolute;
-            inset: -6px;
-            border: 1px solid #111;
-            border-radius: 50%;
+            border-color: #fff;
         }
 
         .pdp-selected-color-label {
             font-weight: 500;
-            color: #555;
+            color: #fff;
             text-transform: none;
             letter-spacing: 0;
         }
 
+        /* Bedenler ve Miktar */
         .pdp-sizes {
             display: flex;
             flex-wrap: wrap;
@@ -323,24 +450,25 @@
         .pdp-size-btn {
             min-width: 54px;
             padding: 10px 16px;
-            border: 1.5px solid #ddd;
+            border: 1.5px solid #444;
             border-radius: 8px;
-            background: #fff;
+            background: #1a1a1a;
             font-weight: 700;
             font-size: 14px;
-            color: #222;
+            color: #ccc;
             cursor: pointer;
             transition: all .15s ease;
         }
 
         .pdp-size-btn:hover {
-            border-color: #111;
+            border-color: #fff;
+            color: #fff;
         }
 
         .pdp-size-btn.active {
-            background: #111;
-            color: #fff;
-            border-color: #111;
+            background: #fff;
+            color: #111;
+            border-color: #fff;
         }
 
         .pdp-qty-row {
@@ -353,7 +481,7 @@
         .pdp-qty {
             display: flex;
             align-items: center;
-            border: 1.5px solid #ddd;
+            border: 1.5px solid #444;
             border-radius: 8px;
             overflow: hidden;
         }
@@ -362,16 +490,16 @@
             width: 40px;
             height: 42px;
             border: none;
-            background: #fafafa;
+            background: #222;
             font-size: 18px;
             font-weight: 700;
-            color: #333;
+            color: #fff;
             cursor: pointer;
             transition: background .15s;
         }
 
         .pdp-qty button:hover {
-            background: #eee;
+            background: #333;
         }
 
         .pdp-qty button:disabled {
@@ -384,19 +512,20 @@
             text-align: center;
             font-weight: 700;
             font-size: 15px;
+            color: #fff;
         }
 
         .pdp-stock-note {
             font-size: 12.5px;
-            color: #999;
+            color: #888;
         }
 
         .pdp-add-btn {
             width: 100%;
             padding: 17px;
             border: none;
-            background: #111;
-            color: #fff;
+            background: #fff;
+            color: #111;
             border-radius: 8px;
             font-size: 16px;
             font-weight: 700;
@@ -410,7 +539,7 @@
         }
 
         .pdp-add-btn:hover:not(:disabled) {
-            background: #333;
+            background: #ddd;
         }
 
         .pdp-add-btn:active:not(:disabled) {
@@ -418,18 +547,20 @@
         }
 
         .pdp-add-btn:disabled {
-            background: #ccc;
+            background: #444;
+            color: #888;
             cursor: not-allowed;
         }
 
+        /* Alt Bilgi Akordiyonu */
         .pdp-trust {
             display: flex;
             flex-wrap: wrap;
             gap: 18px;
             margin: 28px 0;
             padding: 18px 0;
-            border-top: 1px solid #ececec;
-            border-bottom: 1px solid #ececec;
+            border-top: 1px solid #333;
+            border-bottom: 1px solid #333;
         }
 
         .pdp-trust-item {
@@ -438,18 +569,18 @@
             gap: 9px;
             font-size: 12.5px;
             font-weight: 600;
-            color: #555;
+            color: #ccc;
             flex: 1;
             min-width: 130px;
         }
 
         .pdp-trust-item svg {
             flex-shrink: 0;
-            color: #111;
+            color: #fff;
         }
 
         .pdp-accordion-item {
-            border-bottom: 1px solid #ececec;
+            border-bottom: 1px solid #333;
         }
 
         .pdp-accordion-head {
@@ -460,13 +591,13 @@
             cursor: pointer;
             font-weight: 700;
             font-size: 14px;
-            color: #111;
+            color: #fff;
             user-select: none;
         }
 
         .pdp-accordion-head .chev {
             transition: transform .25s ease;
-            color: #999;
+            color: #888;
         }
 
         .pdp-accordion-item.open .pdp-accordion-head .chev {
@@ -481,16 +612,16 @@
 
         .pdp-accordion-body p {
             font-size: 13.5px;
-            color: #666;
+            color: #aaa;
             line-height: 1.75;
             padding-bottom: 16px;
         }
 
-        /* Tam ekran galeri (lightbox) */
+        /* Lightbox (Tam Ekran İnceleme) */
         .pdp-lightbox-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(8, 8, 8, .95);
+            background: rgba(0, 0, 0, .95);
             z-index: 99999;
             display: flex;
             align-items: center;
@@ -511,42 +642,37 @@
             box-shadow: 0 25px 70px rgba(0, 0, 0, .5);
         }
 
-        .pdp-lb-close {
+        .pdp-lb-close,
+        .pdp-lb-prev,
+        .pdp-lb-next {
             position: absolute;
-            top: 26px;
-            right: 32px;
             background: rgba(255, 255, 255, .1);
             border: none;
             color: #fff;
-            font-size: 26px;
-            width: 44px;
-            height: 44px;
             border-radius: 50%;
             cursor: pointer;
-            line-height: 1;
             transition: background .2s;
         }
 
-        .pdp-lb-close:hover {
-            background: rgba(255, 255, 255, .25);
+        .pdp-lb-close {
+            top: 26px;
+            right: 32px;
+            font-size: 26px;
+            width: 44px;
+            height: 44px;
+            line-height: 1;
         }
 
         .pdp-lb-prev,
         .pdp-lb-next {
-            position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(255, 255, 255, .1);
-            border: none;
-            color: #fff;
             font-size: 20px;
             width: 52px;
             height: 52px;
-            border-radius: 50%;
-            cursor: pointer;
-            transition: background .2s;
         }
 
+        .pdp-lb-close:hover,
         .pdp-lb-prev:hover,
         .pdp-lb-next:hover {
             background: rgba(255, 255, 255, .25);
@@ -576,10 +702,54 @@
         .pdp-skeleton {
             padding: 130px 50px;
             text-align: center;
-            color: #999;
+            color: #666;
         }
 
-        /* Responsive kırılımlar */
+        /* Sepet Sidebar Dark Mode Z-index Ezme */
+        .sepet-overlay {
+            z-index: 99998 !important;
+        }
+
+        .sepet-sidebar {
+            background-color: #111 !important;
+            color: #fff;
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.7);
+            z-index: 99999 !important;
+        }
+
+        .sepet-header {
+            border-bottom: 1px solid #333 !important;
+        }
+
+        #sepet-kapat {
+            color: #fff !important;
+        }
+
+        .sepet-footer {
+            background-color: #1a1a1a !important;
+            border-top: 1px solid #333 !important;
+        }
+
+        .sepet-item {
+            border-bottom: 1px solid #333 !important;
+        }
+
+        .sepet-item-detay p {
+            color: #fff !important;
+        }
+
+        .adet-kontrol button {
+            background-color: #333 !important;
+            color: #fff !important;
+        }
+
+        .satin-al-btn {
+            background-color: #fff !important;
+            color: #111 !important;
+        }
+
+
+        /* ============ MOBİL VE RESPONSİVE AYARLAR ============ */
         @media (max-width: 1100px) {
             .pdp-grid {
                 grid-template-columns: 72px minmax(0, 1fr);
@@ -593,11 +763,49 @@
             }
         }
 
-        @media (max-width: 760px) {
-            .pdp-container {
-                padding: 100px 20px 60px;
+        @media (max-width: 900px) {
+            .header-main {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 15px;
             }
 
+            .header-left,
+            .header-right {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .header-right {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 15px;
+            }
+
+            .search-wrapper {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+
+            .header-nav {
+                justify-content: flex-start;
+                padding: 10px 15px;
+                gap: 20px;
+            }
+
+            /* Mobilde üst menü çok yer kapladığı için içeriği daha aşağı itiyoruz */
+            .pdp-container {
+                padding-top: 240px;
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
+            .pdp-info {
+                top: 0;
+            }
+        }
+
+        @media (max-width: 760px) {
             .pdp-grid {
                 grid-template-columns: 1fr;
             }
@@ -629,12 +837,18 @@
             .pdp-title {
                 font-size: 24px;
             }
+
+            /* Üst üste binmeleri önlemek için flex-wrap */
+            .pdp-qty-row {
+                flex-wrap: wrap;
+            }
         }
     </style>
 </head>
 
 <body class="pdp-body">
 
+    <!-- Sepet -->
     <div class="sepet-overlay" id="sepet-overlay"></div>
     <div class="sepet-sidebar" id="sepet-sidebar">
         <div class="sepet-header">
@@ -649,17 +863,39 @@
                 <span>Toplam:</span>
                 <span id="sepet-toplam-fiyat">0.00 TL</span>
             </div>
-            <button class="satin-al-btn">Ödeme Yap</button>
+            <button class="satin-al-btn"
+                onclick="document.getElementById('sepet-sidebar').classList.remove('aktif'); document.getElementById('sepet-overlay').classList.remove('aktif');">Ödeme
+                Yap</button>
         </div>
     </div>
 
-    <header class="site-header" style="background-color:#111;">
-        <a href="index.html" class="logo" style="text-decoration:none;">FEYZAY</a>
-        <nav class="navigation">
-            <a href="index.html">Ana Sayfa</a>
-            <a href="urunler.html">Ürünler</a>
-            <a href="#" id="sepet-ac-btn">Sepet (0)</a>
-            <a href="kayit.html">Giriş Yap</a>
+    <!-- Siyah Temalı Gelişmiş Header -->
+    <header class="babygiz-header">
+        <div class="top-bar">KARGO BEDAVA | 1000 TL ÜZERİ SİPARİŞLERİNİZDE</div>
+
+        <div class="header-main">
+            <div class="header-left">
+                <a href="index.html" class="logo-feyzay">FEYZAY</a>
+            </div>
+
+            <div class="header-right navigation">
+                <div class="search-wrapper">
+                    <input type="text" class="search-input" id="global-search" placeholder="Ürün ara..."
+                        onkeypress="if(event.key === 'Enter') { const v = this.value.trim(); window.location.href = v ? 'urunler.html?search=' + encodeURIComponent(v) : 'urunler.html'; }">
+                </div>
+                <a href="#" id="sepet-ac-btn">Sepet (0)</a>
+                <a href="kayit.html">Giriş Yap</a>
+            </div>
+        </div>
+
+        <nav class="header-nav">
+            <a href="index.html">ANA SAYFA</a>
+            <a href="urunler.html">TÜM ÜRÜNLER</a>
+            <a href="urunler.html?filter=bandana">BANDANA</a>
+            <a href="urunler.html?filter=bere">BERE</a>
+            <a href="urunler.html?filter=şapka">ŞAPKA</a>
+            <a href="urunler.html?filter=boyunluk">BOYUNLUK</a>
+            <a href="urunler.html?filter=t-shirt">T-SHIRT</a>
         </nav>
     </header>
 
@@ -712,10 +948,16 @@
                 </button>
             `).join('');
 
+            // MİNİ FOTOĞRAFLI RENK SEÇİMİ ENTEGRASYONU
             const colorsHtml = colorList
-                ? colorList.map((c, idx) => `
-                    <button class="pdp-color-swatch ${idx === 0 ? 'active' : ''}" data-idx="${idx}" style="background:${c.hex || '#ccc'}" title="${c.name}" aria-label="${c.name}"></button>
-                `).join('')
+                ? colorList.map((c, idx) => {
+                    const thumbImg = (c.images && c.images.length > 0) ? c.images[0] : 'img/no-image.jpg';
+                    return `
+                        <button class="pdp-color-swatch ${idx === 0 ? 'active' : ''}" data-idx="${idx}" title="${c.name}" aria-label="${c.name}">
+                            <img src="${thumbImg}" alt="${c.name}">
+                        </button>
+                    `;
+                }).join('')
                 : '';
 
             const sizesHtml = (urun.sizes && urun.sizes.length > 0)

@@ -6,84 +6,606 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Feyzay | Official Store</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Tamamen Siyah-Beyaz (Dark Mode) Renk Şemasıyla Düzenlemeler */
+        body {
+            margin: 0;
+            padding: 0;
+            padding-top: 145px;
+            background-color: #111 !important;
+            color: #fff !important;
+        }
+
+        .babygiz-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #111;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid #222;
+        }
+
+        .top-bar {
+            background-color: #000;
+            color: #fff;
+            text-align: center;
+            padding: 8px 15px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #222;
+        }
+
+        .header-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 50px;
+            border-bottom: 1px solid #333;
+        }
+
+        .header-left {
+            flex: 1;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-feyzay {
+            font-size: 32px;
+            font-weight: 900;
+            letter-spacing: 5px;
+            color: #fff !important;
+            text-decoration: none;
+        }
+
+        .header-right {
+            flex: 2;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .search-wrapper {
+            position: relative;
+        }
+
+        .search-input {
+            padding: 10px 15px 10px 35px;
+            border: 1px solid #444;
+            border-radius: 20px;
+            outline: none;
+            font-size: 13px;
+            width: 100%;
+            min-width: 220px;
+            transition: border-color 0.3s, background-color 0.3s;
+            background: #222 url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="%23999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>') no-repeat 12px center;
+            color: #fff;
+        }
+
+        .search-input:focus {
+            border-color: #fff;
+            background-color: #111;
+        }
+
+        .navigation a,
+        .navigation .user-menu-container {
+            color: #fff !important;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+
+        .navigation a:hover {
+            opacity: 0.7;
+        }
+
+        .dropdown-content {
+            background-color: #222 !important;
+        }
+
+        .dropdown-content a {
+            color: #fff !important;
+            border-bottom: 1px solid #444 !important;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #333 !important;
+            color: #fff !important;
+        }
+
+        .dropdown-content p {
+            color: #aaa !important;
+        }
+
+        .header-nav {
+            display: flex;
+            justify-content: center;
+            gap: 35px;
+            padding: 15px 20px;
+            background: #111;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .header-nav a {
+            color: #ccc;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            transition: color 0.2s;
+        }
+
+        .header-nav a:hover {
+            color: #fff;
+        }
+
+        .hero-slider {
+            height: 65vh;
+            max-height: 600px;
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .slider-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .slide {
+            flex: 0 0 100%;
+            height: 100%;
+            scroll-snap-align: start;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .category-circles {
+            display: flex;
+            justify-content: center;
+            gap: 35px;
+            padding: 60px 20px 20px;
+            overflow-x: auto;
+            max-width: 1200px;
+            margin: 0 auto;
+            scrollbar-width: none;
+        }
+
+        .category-circles::-webkit-scrollbar {
+            display: none;
+        }
+
+        .category-circle {
+            text-align: center;
+            cursor: pointer;
+            text-decoration: none;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .circle-img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: #222;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #444;
+            transition: transform 0.3s, border-color 0.3s;
+            overflow: hidden;
+            padding: 3px;
+        }
+
+        .circle-img img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .category-circle:hover .circle-img {
+            transform: scale(1.05);
+            border-color: #fff;
+        }
+
+        .circle-title {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .two-banners {
+            display: flex;
+            gap: 20px;
+            padding: 40px 50px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .banner-box {
+            flex: 1;
+            height: 250px;
+            background-color: #222;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: transform 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .banner-box::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            transition: background 0.3s;
+        }
+
+        .banner-box:hover {
+            transform: translateY(-5px);
+        }
+
+        .banner-box:hover::before {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .banner-text {
+            position: relative;
+            z-index: 2;
+            color: #fff;
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+        }
+
+        .section-title {
+            color: #fff;
+        }
+
+        .product-card {
+            background-color: #1a1a1a !important;
+            border: 1px solid #333;
+            border-radius: 4px;
+        }
+
+        .card-image img {
+            border-radius: 4px 4px 0 0;
+        }
+
+        .product-title {
+            color: #eee !important;
+        }
+
+        .product-price {
+            color: #fff !important;
+        }
+
+        .add-to-cart-btn {
+            background-color: #fff !important;
+            color: #111 !important;
+        }
+
+        .add-to-cart-btn:hover {
+            background-color: #ddd !important;
+        }
+
+        .sepet-overlay {
+            z-index: 99998 !important;
+        }
+
+        .sepet-sidebar {
+            background-color: #111 !important;
+            color: #fff;
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.7);
+            z-index: 99999 !important;
+        }
+
+        .sepet-header {
+            border-bottom: 1px solid #333 !important;
+        }
+
+        #sepet-kapat {
+            color: #fff !important;
+        }
+
+        .sepet-footer {
+            background-color: #1a1a1a !important;
+            border-top: 1px solid #333 !important;
+        }
+
+        .sepet-item {
+            border-bottom: 1px solid #333 !important;
+        }
+
+        .sepet-item-detay p {
+            color: #fff !important;
+        }
+
+        .adet-kontrol button {
+            background-color: #333 !important;
+            color: #fff !important;
+        }
+
+        .satin-al-btn {
+            background-color: #fff !important;
+            color: #111 !important;
+        }
+
+        /* MOBİL UYUMLULUK VE SLIDER FOTOĞRAF ÖLÇEKLEMESİ */
+        @media (max-width: 900px) {
+            .header-main {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .header-left,
+            .header-right {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .header-right {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .search-wrapper {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+
+            .header-nav {
+                justify-content: flex-start;
+            }
+
+            body {
+                padding-top: 230px;
+            }
+
+            .two-banners {
+                flex-direction: column;
+                padding: 20px;
+            }
+
+            /* Slayt Fotoğraflarının Mobilde Kesilmesini Önleyen Sistem */
+            .hero-slider {
+                height: 45vw;
+                /* Fotoğraflar telefonun genişliğine göre orantılı küçülür */
+                min-height: 200px;
+                max-height: 350px;
+            }
+
+            .slide {
+                background-size: contain !important;
+                /* Fotoğrafın tamamını ekrana sığdırır */
+                background-position: center !important;
+                background-color: #111;
+                /* Arkada kalan boşlukları siyah yapar */
+            }
+        }
+    </style>
 </head>
-<div class="sepet-overlay" id="sepet-overlay"></div>
-<div class="sepet-sidebar" id="sepet-sidebar">
-    <div class="sepet-header">
-        <h3>Alışveriş Sepeti</h3>
-        <button id="sepet-kapat">&times;</button>
-    </div>
-
-    <div class="sepet-icerik" id="sepet-icerik">
-        <p style="text-align: center; color: #888; margin-top: 20px;">Sepetiniz şu an boş.</p>
-    </div>
-
-    <div class="sepet-footer">
-        <div class="sepet-toplam-kutu">
-            <span>Toplam:</span>
-            <span id="sepet-toplam-fiyat">0.00 TL</span>
-        </div>
-        <button class="satin-al-btn">Ödeme Yap</button>
-    </div>
-</div>
 
 <body>
 
-    <header class="site-header">
-        <a href="index.html" class="logo" style="text-decoration: none;">FEYZAY</a>
-        <nav class="navigation">
-            <a href="index.html">Ana Sayfa</a>
-            <a href="urunler.html">Ürünler</a>
-            <a href="#" id="sepet-ac-btn">Sepet (0)</a>
-            <a href="kayit.html">Giriş Yap</a>
+    <div class="sepet-overlay" id="sepet-overlay"></div>
+    <div class="sepet-sidebar" id="sepet-sidebar">
+        <div class="sepet-header">
+            <h3>Alışveriş Sepeti</h3>
+            <button id="sepet-kapat">&times;</button>
+        </div>
+        <div class="sepet-icerik" id="sepet-icerik">
+            <p style="text-align: center; color: #888; margin-top: 20px;">Sepetiniz şu an boş.</p>
+        </div>
+        <div class="sepet-footer">
+            <div class="sepet-toplam-kutu">
+                <span>Toplam:</span>
+                <span id="sepet-toplam-fiyat">0.00 TL</span>
+            </div>
+            <button class="satin-al-btn"
+                onclick="document.getElementById('sepet-sidebar').classList.remove('aktif'); document.getElementById('sepet-overlay').classList.remove('aktif');">Ödeme
+                Yap</button>
+        </div>
+    </div>
+
+    <header class="babygiz-header">
+        <div class="top-bar">KARGO BEDAVA | 1000 TL ÜZERİ SİPARİŞLERİNİZDE</div>
+
+        <div class="header-main">
+            <div class="header-left">
+                <a href="index.html" class="logo-feyzay">FEYZAY</a>
+            </div>
+
+            <div class="header-right navigation">
+                <div class="search-wrapper">
+                    <input type="text" class="search-input" id="global-search" placeholder="Ürün ara..."
+                        onkeypress="if(event.key === 'Enter') { const v = this.value.trim(); window.location.href = v ? 'urunler.html?search=' + encodeURIComponent(v) : 'urunler.html'; }">
+                </div>
+                <a href="#" id="sepet-ac-btn">Sepet (0)</a>
+                <a href="kayit.html">Giriş Yap</a>
+            </div>
+        </div>
+        <nav class="header-nav">
+            <a href="index.html">ANA SAYFA</a>
+            <a href="urunler.html">TÜM ÜRÜNLER</a>
+            <a href="urunler.html?filter=bandana">BANDANA</a>
+            <a href="urunler.html?filter=bere">BERE</a>
+            <a href="urunler.html?filter=şapka">ŞAPKA</a>
+            <a href="urunler.html?filter=boyunluk">BOYUNLUK</a>
+            <a href="urunler.html?filter=t-shirt">T-SHIRT</a>
         </nav>
     </header>
 
+    <!-- Slider Alanı: İstenilen Fotoğraf Yolları İle Güncellendi -->
     <section class="hero-slider">
         <div class="slider-container" id="slider">
-            <div class="slide slide-1">
-                <div class="slide-content"><span>Slayt 1 (Görsel Alanı)</span></div>
-            </div>
-            <div class="slide slide-2">
-                <div class="slide-content"><span>Slayt 2 (Görsel Alanı)</span></div>
-            </div>
-            <div class="slide slide-3">
-                <div class="slide-content"><span>Slayt 3 (Görsel Alanı)</span></div>
-            </div>
-            <div class="slide slide-4">
-                <div class="slide-content"><span>Slayt 4 (Görsel Alanı)</span></div>
-            </div>
+            <!-- 1. Fotoğraf -->
+            <div class="slide slide-1" style="background-image: url('indexPhotos/1.jpeg');"></div>
+            <!-- 2. Fotoğraf -->
+            <div class="slide slide-2" style="background-image: url('indexPhotos/2.jpeg');"></div>
+            <!-- 3. Fotoğraf -->
+            <div class="slide slide-3" style="background-image: url('indexPhotos/3.jpeg');"></div>
         </div>
 
         <button class="slider-btn prev-btn" id="prevBtn">&#10094;</button>
         <button class="slider-btn next-btn" id="nextBtn">&#10095;</button>
     </section>
 
-    <section class="products-section">
-        <h2 class="section-title">Öne Çıkan Ürünler</h2>
+    <section class="category-circles">
+        <a href="urunler.html?filter=bandana" class="category-circle">
+            <div class="circle-img">
+                <img src="https://cdn.dsmcdn.com/ty1914/prod/QC_PREP/20260610/14/6e5d101c-bf64-3396-aa77-7968e38403b0/1_org_zoom.jpg"
+                    alt="Bandana">
+            </div>
+            <div class="circle-title">Bandana</div>
+        </a>
+        <a href="urunler.html?filter=bere" class="category-circle">
+            <div class="circle-img">
+                <img src="https://cdn.dsmcdn.com/ty1894/prod/QC_PREP/20260610/12/4bac30ce-c273-30e9-9fec-ce5e7560cc28/1_org_zoom.jpg"
+                    alt="Bere">
+            </div>
+            <div class="circle-title">Bere</div>
+        </a>
+        <a href="urunler.html?filter=t-shirt" class="category-circle">
+            <div class="circle-img">
+                <img src="https://cdn.dsmcdn.com/ty1686/prod/QC_PREP/20250601/16/7e9d1ec8-08d3-3dee-a1c0-69493ddcf039/1_org_zoom.jpg"
+                    alt="T-Shirt">
+            </div>
+            <div class="circle-title">T-Shirt</div>
+        </a>
+        <a href="urunler.html?filter=şapka" class="category-circle">
+            <div class="circle-img">
+                <img src="https://cdn.dsmcdn.com/ty1828/prod/QC_PREP/20260220/01/62828f9f-6a0a-3076-bc68-cb3f6a5ec1d8/1_org_zoom.jpg"
+                    alt="Şapka">
+            </div>
+            <div class="circle-title">Şapka</div>
+        </a>
+        <a href="urunler.html?filter=pijama%20takımı" class="category-circle">
+            <div class="circle-img">
+                <img src="https://cdn.dsmcdn.com/ty1771/prod/QC_PREP/20251012/18/1c6a451d-be89-375b-826b-417d5aec3d1f/1_org_zoom.jpg"
+                    alt="Pijama">
+            </div>
+            <div class="circle-title">Pijama Takımı</div>
+        </a>
+        <a href="urunler.html?filter=tayt" class="category-circle">
+            <div class="circle-img">
+                <img src="https://cdn.dsmcdn.com/ty1857/prod/QC_PREP/20260423/23/594be562-eb49-3e81-bc9e-b5c9d908c29d/1_org_zoom.jpg"
+                    alt="Tayt">
+            </div>
+            <div class="circle-title">Tayt</div>
+        </a>
+        <a href="urunler.html?filter=boyunluk" class="category-circle">
+            <div class="circle-img">
+                <img src="https://cdn.dsmcdn.com/ty1860/prod/QC_PREP/20260427/01/2dcf04e3-b7f6-3f54-a25a-0617f07d3107/1_org_zoom.jpg"
+                    alt="Boyunluk">
+            </div>
+            <div class="circle-title">Boyunluk</div>
+        </a>
+    </section>
+
+    <section class="two-banners">
+        <a href="urunler.html" class="banner-box"
+            style="background-image: url('https://cdn.dsmcdn.com/ty1676/prod/QC/20250511/21/6332b02a-ae7c-37db-be66-5773d4f67232/1_org_zoom.jpg');">
+            <span class="banner-text">YENİ SEZON ÜRÜNLERİ</span>
+        </a>
+        <a href="urunler.html?filter=tesettür%20alt%20-%20üst%20takım" class="banner-box"
+            style="background-image: url('https://cdn.dsmcdn.com/ty1941/prod/QC_PREP/20260614/22/413ddb37-fff4-35ab-a468-ad84a801aff9/1_org_zoom.jpg'); background-position: center 30%;">
+            <span class="banner-text">KOMBİNLER</span>
+        </a>
+    </section>
+
+    <section class="products-section" style="padding-top: 0;">
+        <h2 class="section-title">Haftanın En Çok Satanları</h2>
         <div class="products-grid">
+
             <div class="product-card">
-                <div class="card-image-placeholder">Ürün Fotoğrafı</div>
+                <a href="detay.html?id=BG840SBDK01" class="card-image">
+                    <img src="https://cdn.dsmcdn.com/ty1914/prod/QC_PREP/20260610/14/6e5d101c-bf64-3396-aa77-7968e38403b0/1_org_zoom.jpg"
+                        alt="Ürün Fotoğrafı">
+                </a>
+                <div class="card-details">
+                    <h3 class="product-title" style="font-size:15px; height: 35px; overflow:hidden;">Kadın Koyu
+                        Kahverengi Pamuklu Penye Saç Bandı</h3>
+                    <p class="product-price">199.00 TL</p>
+                    <button class="add-to-cart-btn"
+                        onclick="window.location.href='detay.html?id=BG840SBDK01'">İncele</button>
+                </div>
             </div>
+
             <div class="product-card">
-                <div class="card-image-placeholder">Ürün Fotoğrafı</div>
+                <a href="detay.html?id=TESAÜ01" class="card-image">
+                    <img src="https://cdn.dsmcdn.com/ty1907/prod/QC_PREP/20260614/22/b9d62d6e-65a1-3e23-9b5b-82e0af45071e/1_org_zoom.jpg"
+                        alt="Ürün Fotoğrafı">
+                </a>
+                <div class="card-details">
+                    <h3 class="product-title" style="font-size:15px; height: 35px; overflow:hidden;">Kadın Tesettür
+                        Tunik Pantolon Rahat Takım</h3>
+                    <p class="product-price">1740.00 TL</p>
+                    <button class="add-to-cart-btn"
+                        onclick="window.location.href='detay.html?id=TESAÜ01'">İncele</button>
+                </div>
             </div>
+
             <div class="product-card">
-                <div class="card-image-placeholder">Ürün Fotoğrafı</div>
+                <a href="detay.html?id=UYKU1" class="card-image">
+                    <img src="https://cdn.dsmcdn.com/ty1771/prod/QC_PREP/20251012/18/1c6a451d-be89-375b-826b-417d5aec3d1f/1_org_zoom.jpg"
+                        alt="Ürün Fotoğrafı">
+                </a>
+                <div class="card-details">
+                    <h3 class="product-title" style="font-size:15px; height: 35px; overflow:hidden;">Kadın %100 Pamuklu
+                        Penye Pijama Takımı</h3>
+                    <p class="product-price">1149.00 TL</p>
+                    <button class="add-to-cart-btn" onclick="window.location.href='detay.html?id=UYKU1'">İncele</button>
+                </div>
             </div>
-            <div class="product-card">
-                <div class="card-image-placeholder">Ürün Fotoğrafı</div>
-            </div>
-            <div class="product-card">
-                <div class="card-image-placeholder">Ürün Fotoğrafı</div>
-            </div>
-            <div class="product-card">
-                <div class="card-image-placeholder">Ürün Fotoğrafı</div>
-            </div>
+
+
         </div>
     </section>
 
     <script src="base.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const searchQuery = params.get('search');
+
+            if (searchQuery) {
+                const searchInput = document.getElementById('product-search-input');
+                if (searchInput) {
+                    searchInput.value = searchQuery;
+                    setTimeout(() => {
+                        searchInput.dispatchEvent(new Event('input'));
+                    }, 300);
+                }
+            }
+        });
+    </script>
 </body>
 
 </html>

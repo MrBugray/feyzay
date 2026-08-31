@@ -381,7 +381,7 @@
 
         .adm-item-row {
             font-size: 13.5px;
-            padding: 6px 0;
+            padding: 12px 0;
             border-bottom: 1px dashed var(--line);
         }
 
@@ -569,7 +569,9 @@
 
         .adm-field input[type="text"],
         .adm-field input[type="number"],
-        .adm-field textarea {
+        .adm-field textarea,
+        .adm-color-block input[type="text"],
+        .adm-color-block input[type="number"] {
             width: 100%;
             padding: 11px 13px;
             border: 1.5px solid var(--line);
@@ -579,7 +581,8 @@
         }
 
         .adm-field input:focus,
-        .adm-field textarea:focus {
+        .adm-field textarea:focus,
+        .adm-color-block input:focus {
             outline: none;
             border-color: var(--ink);
         }
@@ -617,7 +620,7 @@
         .adm-color-block {
             border: 1.5px solid var(--line);
             border-radius: 9px;
-            padding: 16px;
+            padding: 34px 16px 16px 16px;
             margin-bottom: 12px;
             position: relative;
         }
@@ -640,14 +643,21 @@
 
         .adm-remove-color {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            background: none;
+            top: 8px;
+            right: 12px;
+            background: rgba(192, 57, 43, 0.1);
             border: none;
             color: var(--bad);
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 4px;
             cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .adm-remove-color:hover {
+            background: rgba(192, 57, 43, 0.2);
         }
 
         .adm-add-color-btn {
@@ -902,8 +912,8 @@
                         <input type="number" id="f-legacy-stock" min="0" placeholder="ör. 45">
                     </div>
                     <div class="adm-field">
-                        <label>Görsel Adresleri (her satıra bir tane)</label>
-                        <textarea id="f-legacy-images" placeholder="https://... veya \products\... yolu"></textarea>
+                        <label>Görsel Adresleri (Birden fazlaysa virgülle ayırın)</label>
+                        <input type="text" id="f-legacy-images" placeholder="https://... veya \products\... yolu">
                     </div>
                 </div>
 
@@ -1069,6 +1079,19 @@
             }
         }
 
+        // Sipariş fotoğraflarını getirecek yardımcı fonksiyon
+        function siparisUrunGorsel(id, renk) {
+            const urun = butunUrunlerAdmin.find(u => u.id === id);
+            if (!urun) return 'img/no-image.jpg';
+            if (renk && urun.colors && urun.colors.length > 0) {
+                const c = urun.colors.find(color => color.name === renk);
+                if (c && c.images && c.images.length > 0) return c.images[0];
+            }
+            if (urun.images && urun.images.length > 0) return urun.images[0];
+            if (urun.image) return urun.image;
+            return 'img/no-image.jpg';
+        }
+
         function siparisleriCiz() {
             const list = document.getElementById('adm-orders-list');
             const arama = document.getElementById('adm-order-search').value.toLowerCase().trim();
@@ -1090,12 +1113,18 @@
 
             list.innerHTML = gosterilecek.map(o => {
                 const tarih = new Date(o.createdAt).toLocaleString('tr-TR');
-                const urunlerHtml = (o.cartData || []).map(item => `
-                    <div class="adm-item-row">
-                        <strong>${item.name}</strong> × ${item.adet}
-                        <div class="adm-item-meta">${[item.beden, item.renk].filter(Boolean).join(' · ') || '—'} · ID: ${item.id}</div>
+                const urunlerHtml = (o.cartData || []).map(item => {
+                    const imgSrc = siparisUrunGorsel(item.id, item.renk);
+                    return `
+                    <div class="adm-item-row" style="display: flex; align-items: center; gap: 15px;">
+                        <img src="${imgSrc}" style="width: 100px; height: 150px; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                        <div>
+                            <strong style="font-size: 14.5px;">${item.name}</strong> × ${item.adet}
+                            <div class="adm-item-meta" style="margin-top: 4px;">${[item.beden, item.renk].filter(Boolean).join(' · ')} · ID: ${item.id}</div>
+                        </div>
                     </div>
-                `).join('') || '<p class="adm-item-meta">Ürün bilgisi yok.</p>';
+                    `;
+                }).join('') || '<p class="adm-item-meta">Ürün bilgisi yok.</p>';
 
                 const kargoBadge = o.cargoState === 1
                     ? `<span class="adm-badge good"><span class="dot"></span>Kargoya Verildi</span>`
@@ -1210,6 +1239,7 @@
                 const data = await res.json();
                 butunUrunlerAdmin = data.products || [];
                 urunleriCiz();
+                siparisleriCiz(); // Ürünler yüklendiğinde siparişleri resimleriyle tekrar çiz
             } catch (e) {
                 if (grid) grid.innerHTML = '<p class="adm-empty">Ürünler yüklenemedi.</p>';
             }
@@ -1280,13 +1310,13 @@
             const wrap = document.createElement('div');
             wrap.className = 'adm-color-block';
             wrap.innerHTML = `
-                <button type="button" class="adm-remove-color">Kaldır ✕</button>
+                <button type="button" class="adm-remove-color">✕ Kaldır</button>
                 <div class="adm-color-block-row">
                     <input type="text" class="c-name" placeholder="Renk adı (ör. Bordo)" value="${data?.name || ''}">
                     <input type="color" class="c-hex" value="${data?.hex || '#cccccc'}">
                     <input type="number" class="c-stock" placeholder="Stok" min="0" value="${data?.stock ?? ''}">
                 </div>
-                <textarea class="c-images" placeholder="Görsel adresleri (her satıra bir tane)">${(data?.images || []).join('\n')}</textarea>
+                <input type="text" class="c-images" placeholder="Görsel adresi (Birden fazlaysa virgülle ayırın)" value="${(data?.images || []).join(', ')}">
             `;
             wrap.querySelector('.adm-remove-color').onclick = () => wrap.remove();
             document.getElementById('f-colors-list').appendChild(wrap);
@@ -1356,7 +1386,7 @@
                 document.getElementById('f-legacy-section').style.display = 'block';
                 document.getElementById('f-legacy-stock').value = urun.stock ?? '';
                 const imgs = (urun.images && urun.images.length > 0) ? urun.images : (urun.image ? [urun.image] : []);
-                document.getElementById('f-legacy-images').value = imgs.join('\n');
+                document.getElementById('f-legacy-images').value = imgs.join(', ');
                 bosColorBlockEkle();
             }
 
@@ -1404,7 +1434,7 @@
                     name: block.querySelector('.c-name').value.trim(),
                     hex: block.querySelector('.c-hex').value,
                     stock: Number(block.querySelector('.c-stock').value) || 0,
-                    images: block.querySelector('.c-images').value.split('\n').map(s => s.trim()).filter(Boolean)
+                    images: block.querySelector('.c-images').value.split(',').map(s => s.trim()).filter(Boolean)
                 })).filter(c => c.name);
 
                 if (colors.length === 0) {
@@ -1415,7 +1445,7 @@
                 urun.colors = colors;
             } else {
                 urun.stock = Number(document.getElementById('f-legacy-stock').value) || 0;
-                const imgs = document.getElementById('f-legacy-images').value.split('\n').map(s => s.trim()).filter(Boolean);
+                const imgs = document.getElementById('f-legacy-images').value.split(',').map(s => s.trim()).filter(Boolean);
                 if (imgs.length > 1) urun.images = imgs;
                 else if (imgs.length === 1) urun.image = imgs[0];
             }

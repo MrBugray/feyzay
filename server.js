@@ -14,7 +14,7 @@ app.use(cors());
 app.use(express.static(__dirname));
 
 if (!process.env.SECRET_CRYPT_KEY) {
-    console.error("HATA: SECRET_CRYPT_KEY .env dosyasında bulunamadı! Güvenlik nedeniyle sunucu başlatılamıyor.");
+    console.error("HATA: SECRET_CRYPT_KEY .env dosyasında bulunamadı! Sunucu başlatılamıyor.");
     process.exit(1);
 }
 
@@ -60,7 +60,7 @@ db.serialize(() => {
         FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE
     )`);
 
-    // Var olan veritabanlarında "renk" kolonu bulunmayabilir; yoksa ekle (varsa hatayı yok say)
+
     db.run(`ALTER TABLE order_items ADD COLUMN renk TEXT`, () => { });
 });
 
@@ -237,18 +237,14 @@ app.post('/api/checkout', async (req, res) => {
 
 app.post('/api/paytr-callback', (req, res) => {
     const { merchant_oid, status, total_amount, hash } = req.body;
-
     const merchant_id = process.env.PAYTR_MERCHANT_ID;
     const merchant_key = process.env.PAYTR_MERCHANT_KEY;
     const merchant_salt = process.env.PAYTR_MERCHANT_SALT;
-
     const hash_str = merchant_oid + merchant_salt + status + total_amount;
     const generated_hash = crypto.createHmac('sha256', merchant_key).update(hash_str).digest('base64');
-
     if (hash !== generated_hash) {
         return res.send('PAYTR notification failed: bad hash');
     }
-
     if (status === 'success') {
         db.run(`UPDATE orders SET payment_status = 1 WHERE merchant_oid = ?`, [merchant_oid]);
     } else {
@@ -256,8 +252,6 @@ app.post('/api/paytr-callback', (req, res) => {
     }
     res.send('OK');
 });
-
-
 app.get('/api/paytr-success', (req, res) => {
     res.send(`
         <div style="text-align:center; font-family:sans-serif; margin-top:100px;">
@@ -273,7 +267,6 @@ app.get('/api/paytr-success', (req, res) => {
         </div>
     `);
 });
-
 app.get('/api/paytr-fail', (req, res) => {
     res.send(`
         <div style="text-align:center; font-family:sans-serif; margin-top:100px;">
@@ -305,7 +298,6 @@ app.post('/api/user/get-address', (req, res) => {
         });
     });
 });
-
 app.post('/api/user/address', (req, res) => {
     const { email, city, district, street, zipcode } = req.body;
     if (!email) return res.status(400).json({ success: false, message: 'Kimlik eksik.' });
@@ -315,7 +307,6 @@ app.post('/api/user/address', (req, res) => {
         res.json({ success: true, message: 'Adres başarıyla güncellendi!' });
     });
 });
-
 app.post('/api/user/update-profile', (req, res) => {
     const { currentEmail, firstName, lastName, newEmail, oldPassword, newPassword } = req.body;
     if (!currentEmail || !firstName || !lastName || !newEmail) {
@@ -353,7 +344,6 @@ app.post('/api/user/update-profile', (req, res) => {
         }
     });
 });
-
 app.post('/api/user/orders', (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ success: false });
@@ -395,13 +385,6 @@ app.post('/api/user/orders', (req, res) => {
         res.json({ success: true, orders: finalOrders });
     });
 });
-
-// =====================================================================
-// ============================ ADMİN PANELİ ==========================
-// =====================================================================
-// Admin uçları, her istekte "x-admin-key" header'ının .env'deki
-// ADMIN_PASSWORD ile eşleşmesini şart koşar. .env'de ADMIN_PASSWORD
-// tanımlı değilse admin paneli tamamen kapalı kalır (güvenli varsayılan).
 const PRODUCTS_PATH = path.join(__dirname, 'products.json');
 
 function adminAuth(req, res, next) {
@@ -422,7 +405,6 @@ function urunleriYaz(urunler) {
     fs.writeFileSync(PRODUCTS_PATH, JSON.stringify(urunler, null, 4), 'utf8');
 }
 
-// --- Giriş ---
 app.post('/api/admin/login', (req, res) => {
     if (!process.env.ADMIN_PASSWORD) {
         return res.status(503).json({ success: false, message: 'Admin paneli aktif değil: .env dosyasına ADMIN_PASSWORD ekleyin.' });
@@ -432,8 +414,6 @@ app.post('/api/admin/login', (req, res) => {
     }
     return res.status(401).json({ success: false, message: 'Şifre hatalı.' });
 });
-
-// --- Siparişler ---
 app.get('/api/admin/orders', adminAuth, (req, res) => {
     db.all(`SELECT o.*, i.beden, i.urun_id, i.urun_name, i.adet, i.renk FROM orders o 
             LEFT JOIN order_items i ON o.id = i.order_id 
@@ -536,7 +516,6 @@ app.get('/api/admin/orders/export', adminAuth, (req, res) => {
                 cargoCode: row.cargo_tracking_code || 'Atanmadı'
             });
         });
-
         res.setHeader('Content-Disposition', 'attachment; filename="Feyzay_Siparisler.xlsx"');
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         try {
@@ -547,8 +526,6 @@ app.get('/api/admin/orders/export', adminAuth, (req, res) => {
         }
     });
 });
-
-// --- Ürünler (products.json üzerinde CRUD) ---
 app.get('/api/admin/products', adminAuth, (req, res) => {
     try {
         res.json({ success: true, products: urunleriOku() });
@@ -556,7 +533,6 @@ app.get('/api/admin/products', adminAuth, (req, res) => {
         res.status(500).json({ success: false, message: 'products.json okunamadı.' });
     }
 });
-
 app.post('/api/admin/products', adminAuth, (req, res) => {
     try {
         const urunler = urunleriOku();
@@ -574,14 +550,15 @@ app.post('/api/admin/products', adminAuth, (req, res) => {
         res.status(500).json({ success: false, message: 'Ürün kaydedilemedi.' });
     }
 });
-
 app.put('/api/admin/products/:id', adminAuth, (req, res) => {
     try {
         const urunler = urunleriOku();
         const idx = urunler.findIndex(u => u.id === req.params.id);
-        if (idx === -1) return res.status(404).json({ success: false, message: 'Ürün bulunamadı.' });
+        if (idx === -1) return res.status(404).json({
+            success: false, message: 'Ürün bulunamadı.'
 
-        // ID değiştiriliyorsa, yeni ID'nin başka bir üründe kullanılmadığından emin ol
+        });
+
         if (req.body.id && req.body.id !== req.params.id && urunler.some(u => u.id === req.body.id)) {
             return res.status(400).json({ success: false, message: 'Bu ürün ID zaten kullanılıyor.' });
         }
@@ -605,9 +582,7 @@ app.delete('/api/admin/products/:id', adminAuth, (req, res) => {
         res.status(500).json({ success: false, message: 'Ürün silinemedi.' });
     }
 });
-// =====================================================================
-// ========================= ADMİN PANELİ SONU =========================
-// =====================================================================
+
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));

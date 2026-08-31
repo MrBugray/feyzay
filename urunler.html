@@ -6,38 +6,545 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Feyzay | Ürünler</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* ============ DARK MODE & GENEL DÜZENLEMELER ============ */
+        body {
+            margin: 0;
+            padding: 0;
+            padding-top: 145px;
+            background-color: #111 !important;
+            color: #fff !important;
+        }
+
+        .babygiz-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #111;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid #222;
+        }
+
+        .top-bar {
+            background-color: #000;
+            color: #fff;
+            text-align: center;
+            padding: 8px 15px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #222;
+        }
+
+        .header-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 50px;
+            border-bottom: 1px solid #333;
+        }
+
+        .header-left {
+            flex: 1;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-feyzay {
+            font-size: 32px;
+            font-weight: 900;
+            letter-spacing: 5px;
+            color: #fff !important;
+            text-decoration: none;
+        }
+
+        .header-right {
+            flex: 2;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .search-wrapper {
+            position: relative;
+        }
+
+        .search-input {
+            padding: 10px 15px 10px 35px;
+            border: 1px solid #444;
+            border-radius: 20px;
+            outline: none;
+            font-size: 13px;
+            width: 100%;
+            min-width: 220px;
+            transition: border-color 0.3s, background-color 0.3s;
+            background: #222 url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="%23999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>') no-repeat 12px center;
+            color: #fff;
+        }
+
+        .search-input:focus {
+            border-color: #fff;
+            background-color: #111;
+        }
+
+        .navigation a,
+        .navigation .user-menu-container {
+            color: #fff !important;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+
+        .navigation a:hover {
+            opacity: 0.7;
+        }
+
+        .dropdown-content {
+            background-color: #222 !important;
+        }
+
+        .dropdown-content a {
+            color: #fff !important;
+            border-bottom: 1px solid #444 !important;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #333 !important;
+            color: #fff !important;
+        }
+
+        .dropdown-content p {
+            color: #aaa !important;
+        }
+
+        .header-nav {
+            display: flex;
+            justify-content: center;
+            gap: 35px;
+            padding: 15px 20px;
+            background: #111;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .header-nav a {
+            color: #ccc;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            transition: color 0.2s;
+        }
+
+        .header-nav a:hover {
+            color: #fff;
+        }
+
+        /* ============ ÜRÜNLER SAYFASI ÖZEL (DARK MODE) ============ */
+
+        .gender-filter-bar {
+            background: #111;
+        }
+
+        .gender-btn {
+            background-color: #1a1a1a !important;
+            color: #ccc !important;
+            border-color: #444 !important;
+        }
+
+        .gender-btn:hover {
+            border-color: #fff !important;
+            color: #fff !important;
+        }
+
+        .gender-btn.active {
+            background-color: #fff !important;
+            color: #111 !important;
+            border-color: #fff !important;
+        }
+
+        .sidebar-filter {
+            background-color: #1a1a1a !important;
+            border-color: #333 !important;
+        }
+
+        .sidebar-filter h3 {
+            color: #fff !important;
+            border-bottom-color: #444 !important;
+        }
+
+        .filter-btn {
+            color: #ccc !important;
+            border-color: #444 !important;
+        }
+
+        .filter-btn:hover {
+            background-color: #333 !important;
+            color: #fff !important;
+        }
+
+        .filter-btn.active {
+            background-color: #fff !important;
+            color: #111 !important;
+            border-color: #fff !important;
+        }
+
+        /* ====== MOBİL FİLTRE BUTONU (Sadece mobilde görünür) ====== */
+        .filter-toggle {
+            display: none;
+        }
+
+        /* ====== HİZALAMA FİXİ ====== */
+        .products-grid {
+            display: grid !important;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important;
+            gap: 30px !important;
+            align-items: stretch !important;
+        }
+
+        .product-card {
+            background-color: #1a1a1a !important;
+            border: 1px solid #333 !important;
+            border-radius: 6px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            height: 100% !important;
+            margin: 0 !important;
+            overflow: hidden;
+        }
+
+        .card-image {
+            width: 100%;
+            aspect-ratio: 3/4;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .card-details {
+            padding: 20px 15px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            flex-grow: 1 !important;
+            text-align: center;
+        }
+
+        .product-title {
+            color: #eee !important;
+            font-size: 15px !important;
+            line-height: 1.4 !important;
+            height: 42px !important;
+            overflow: hidden !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            margin-bottom: 12px !important;
+        }
+
+        .product-price {
+            color: #fff !important;
+            font-size: 18px !important;
+            font-weight: 800 !important;
+            margin-top: auto !important;
+            margin-bottom: 15px !important;
+        }
+
+        .add-to-cart-btn {
+            background-color: #fff !important;
+            color: #111 !important;
+            width: 100%;
+            padding: 12px 0;
+            border: none;
+            border-radius: 4px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .add-to-cart-btn:hover {
+            background-color: #ddd !important;
+        }
+
+        #product-search-input {
+            background-color: #222 !important;
+            color: #fff !important;
+            border: 1px solid #444 !important;
+        }
+
+        #product-search-input:focus {
+            border-color: #fff !important;
+        }
+
+        .sepet-overlay {
+            z-index: 99998 !important;
+        }
+
+        .sepet-sidebar {
+            background-color: #111 !important;
+            color: #fff;
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.7);
+            z-index: 99999 !important;
+        }
+
+        .sepet-header {
+            border-bottom: 1px solid #333 !important;
+        }
+
+        #sepet-kapat {
+            color: #fff !important;
+        }
+
+        .sepet-footer {
+            background-color: #1a1a1a !important;
+            border-top: 1px solid #333 !important;
+        }
+
+        .sepet-item {
+            border-bottom: 1px solid #333 !important;
+        }
+
+        .sepet-item-detay p {
+            color: #fff !important;
+        }
+
+        .adet-kontrol button {
+            background-color: #333 !important;
+            color: #fff !important;
+        }
+
+        .satin-al-btn {
+            background-color: #fff !important;
+            color: #111 !important;
+        }
+
+        /* ========================================================
+           ========== MOBİL VE RESPONSİVE TASARIM AYARLARI ======== 
+           ======================================================== */
+
+        @media (max-width: 900px) {
+            .header-main {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .header-left,
+            .header-right {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .header-right {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 15px;
+            }
+
+            .search-wrapper {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+
+            .header-nav {
+                justify-content: flex-start;
+                padding: 10px 15px;
+                gap: 20px;
+            }
+
+            body {
+                padding-top: 220px;
+            }
+
+            .products-page-layout {
+                flex-direction: column;
+                padding: 20px !important;
+                gap: 20px !important;
+            }
+
+            .gender-filter-bar {
+                padding: 20px 20px 0;
+                justify-content: flex-start;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                gap: 10px;
+            }
+
+            .gender-filter-bar::-webkit-scrollbar {
+                display: none;
+            }
+
+            .gender-btn {
+                flex-shrink: 0;
+                padding: 10px 20px;
+            }
+
+            /* MOBİL FİLTRE MENÜSÜ DÜZENLEMELERİ */
+            .sidebar-filter {
+                width: 100%;
+                position: relative;
+                top: 0;
+                margin-bottom: 10px;
+                padding: 15px;
+                max-height: none;
+                overflow: visible;
+            }
+
+            .sidebar-filter h3 {
+                display: none;
+                /* Mobilde orijinal başlığı gizle */
+            }
+
+            /* Mobilde görünecek açılır/kapanır buton */
+            .filter-toggle {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background-color: #222;
+                color: #fff;
+                padding: 14px 18px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 700;
+                font-size: 15px;
+                border: 1px solid #444;
+                transition: background 0.3s;
+            }
+
+            .filter-toggle:hover {
+                background-color: #333;
+            }
+
+            /* Mobilde filtre listesinin başlangıçta gizli olması ve grid yapısı */
+            .filter-container-vertical {
+                display: none;
+                flex-direction: row !important;
+                flex-wrap: wrap;
+                gap: 10px;
+                margin-top: 15px;
+            }
+
+            /* JS ile .show classı eklendiğinde açılır */
+            .filter-container-vertical.show {
+                display: flex !important;
+            }
+
+            /* Mobilde butonlar şık bir şekilde yan yana (2 kolon) dizilir */
+            .filter-btn {
+                flex: 1 1 calc(50% - 10px);
+                text-align: center !important;
+                padding: 10px !important;
+                font-size: 13px !important;
+            }
+
+            /* Ürün Kartları Mobil Düzeni */
+            .products-grid {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
+                gap: 15px !important;
+            }
+
+            .card-details {
+                padding: 15px 10px !important;
+            }
+
+            .product-title {
+                font-size: 13px !important;
+                height: 38px !important;
+            }
+
+            .product-price {
+                font-size: 16px !important;
+                margin-bottom: 10px !important;
+            }
+
+            .add-to-cart-btn {
+                font-size: 14px !important;
+                padding: 10px 0 !important;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .products-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+                gap: 10px !important;
+            }
+
+            .header-right {
+                gap: 10px;
+            }
+
+            .navigation a {
+                font-size: 13px !important;
+            }
+        }
+    </style>
 </head>
-<div class="sepet-overlay" id="sepet-overlay"></div>
-<div class="sepet-sidebar" id="sepet-sidebar">
-    <div class="sepet-header">
-        <h3>Alışveriş Sepeti</h3>
-        <button id="sepet-kapat">&times;</button>
-    </div>
-
-    <div class="sepet-icerik" id="sepet-icerik">
-        <p style="text-align: center; color: #888; margin-top: 20px;">Sepetiniz şu an boş.</p>
-    </div>
-
-    <div class="sepet-footer">
-        <div class="sepet-toplam-kutu">
-            <span>Toplam:</span>
-            <span id="sepet-toplam-fiyat">0.00 TL</span>
-        </div>
-        <button class="satin-al-btn">Ödeme Yap</button>
-    </div>
-</div>
 
 <body class="products-page">
 
-    <header class="site-header">
-        <a href="index.html" class="logo" style="text-decoration: none;">FEYZAY</a>
-        <nav class="navigation">
-            <a href="index.html">Ana Sayfa</a>
-            <a href="urunler.html">Ürünler</a>
-            <a href="#" id="sepet-ac-btn">Sepet (0)</a>
-            <a href="kayit.html">Giriş Yap</a>
+    <div class="sepet-overlay" id="sepet-overlay"></div>
+    <div class="sepet-sidebar" id="sepet-sidebar">
+        <div class="sepet-header">
+            <h3>Alışveriş Sepeti</h3>
+            <button id="sepet-kapat">&times;</button>
+        </div>
+        <div class="sepet-icerik" id="sepet-icerik">
+            <p style="text-align: center; color: #888; margin-top: 20px;">Sepetiniz şu an boş.</p>
+        </div>
+        <div class="sepet-footer">
+            <div class="sepet-toplam-kutu">
+                <span>Toplam:</span>
+                <span id="sepet-toplam-fiyat">0.00 TL</span>
+            </div>
+            <button class="satin-al-btn"
+                onclick="document.getElementById('sepet-sidebar').classList.remove('aktif'); document.getElementById('sepet-overlay').classList.remove('aktif');">Ödeme
+                Yap</button>
+        </div>
+    </div>
+
+    <!-- Siyah Temalı Gelişmiş Header -->
+    <header class="babygiz-header">
+        <div class="top-bar">KARGO BEDAVA | 1000 TL ÜZERİ SİPARİŞLERİNİZDE</div>
+
+        <div class="header-main">
+            <div class="header-left">
+                <a href="index.html" class="logo-feyzay">FEYZAY</a>
+            </div>
+
+            <div class="header-right navigation">
+                <div class="search-wrapper">
+                    <input type="text" class="search-input" id="global-search" placeholder="Ürün ara..."
+                        onkeypress="if(event.key === 'Enter') { const v = this.value.trim(); window.location.href = v ? 'urunler.html?search=' + encodeURIComponent(v) : 'urunler.html'; }">
+                </div>
+                <a href="#" id="sepet-ac-btn">Sepet (0)</a>
+                <a href="kayit.html">Giriş Yap</a>
+            </div>
+        </div>
+
+        <nav class="header-nav">
+            <a href="index.html">ANA SAYFA</a>
+            <a href="urunler.html">TÜM ÜRÜNLER</a>
+            <a href="urunler.html?filter=bandana">BANDANA</a>
+            <a href="urunler.html?filter=bere">BERE</a>
+            <a href="urunler.html?filter=şapka">ŞAPKA</a>
+            <a href="urunler.html?filter=boyunluk">BOYUNLUK</a>
+            <a href="urunler.html?filter=t-shirt">T-SHIRT</a>
         </nav>
     </header>
+
     <div class="gender-filter-bar">
         <button class="gender-btn active" data-gender="all">Tümü</button>
         <button class="gender-btn" data-gender="kadin">Kadın</button>
@@ -46,28 +553,78 @@
     </div>
 
     <main class="products-page-layout">
-
         <aside class="sidebar-filter">
             <h3>Kategoriler</h3>
+
+            <!-- MOBİL İÇİN AÇILIR KAPANIR FİLTRE BUTONU -->
+            <div class="filter-toggle" id="filter-toggle">
+                Kategorileri Filtrele <span>▼</span>
+            </div>
+
             <div class="filter-container-vertical" id="kategori-listesi">
+                <!-- JS ürün kategorilerini buraya dinamik olarak ekliyor -->
             </div>
         </aside>
 
         <section class="products-main">
             <div
                 style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
-                <h1 class="section-title" style="text-align: left; margin: 0;">Tüm Koleksiyon</h1>
+                <h1 class="section-title" style="text-align: left; margin: 0; color: #fff;">Tüm Koleksiyon</h1>
                 <input type="text" id="product-search-input" placeholder="Ürün ismine göre ara..."
-                    style="padding: 12px 16px; border: 1px solid #ddd; border-radius: 6px; width: 100%; max-width: 320px; font-size: 14px; outline: none; transition: border-color 0.3s;"
-                    onfocus="this.style.borderColor='#111'" onblur="this.style.borderColor='#ddd'">
+                    style="padding: 12px 16px; border-radius: 6px; width: 100%; max-width: 320px; font-size: 14px; outline: none; transition: border-color 0.3s;">
             </div>
 
             <div class="products-grid" id="urun-kutusu">
+                <!-- JS ürünleri buraya ekliyor -->
             </div>
         </section>
-
     </main>
+
     <script src="base.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1) Arama Çubuğu Yönlendirme Yakalaması
+            const params = new URLSearchParams(window.location.search);
+            const searchQuery = params.get('search');
+
+            if (searchQuery) {
+                const searchInput = document.getElementById('product-search-input');
+                if (searchInput) {
+                    searchInput.value = searchQuery;
+                    setTimeout(() => {
+                        searchInput.dispatchEvent(new Event('input'));
+                    }, 300);
+                }
+            }
+
+            // 2) Mobil İçin Filtre Menüsü (Accordion) Mantığı
+            const filterToggle = document.getElementById('filter-toggle');
+            const kategoriListesi = document.getElementById('kategori-listesi');
+
+            if (filterToggle && kategoriListesi) {
+                // Tıklayınca menüyü aç/kapat
+                filterToggle.addEventListener('click', () => {
+                    kategoriListesi.classList.toggle('show');
+                    const span = filterToggle.querySelector('span');
+                    span.textContent = kategoriListesi.classList.contains('show') ? '▲' : '▼';
+                });
+
+                // Herhangi bir filtreye (butona) tıklandığında menüyü otomatik kapat
+                kategoriListesi.addEventListener('click', (e) => {
+                    // Tıklanan öğe bir buton ise ve ekran genişliği mobil boyuttaysa
+                    if (e.target.tagName === 'BUTTON' || e.target.classList.contains('filter-btn')) {
+                        if (window.innerWidth <= 900) {
+                            kategoriListesi.classList.remove('show');
+                            filterToggle.querySelector('span').textContent = '▼';
+
+                            // Kullanıcının ürünleri rahat görebilmesi için sayfayı hafif yukarı kaydır
+                            window.scrollTo({ top: 150, behavior: 'smooth' });
+                        }
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 
 </html>
