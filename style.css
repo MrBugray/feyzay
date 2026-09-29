@@ -824,3 +824,229 @@ body {
     max-width: 90%;
     max-height: 90%;
 }
+
+/* ============ ALT BİLGİ (FOOTER & KVKK) ============ */
+.feyzay-footer {
+    background-color: #050505;
+    color: #888;
+    padding: 60px 20px 30px;
+    margin-top: 80px;
+    border-top: 1px solid #222;
+    text-align: center;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.footer-logo {
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: 5px;
+    color: #fff;
+    margin-bottom: 10px;
+}
+
+.footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px 30px;
+}
+
+.footer-links a {
+    color: #aaa;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.footer-links a:hover {
+    color: #fff;
+}
+
+.footer-copyright {
+    margin-top: 25px;
+    font-size: 12px;
+    color: #444;
+}
+
+.footer-legal-note {
+    max-width: 700px;
+    margin: 20px auto 0;
+    font-size: 11px;
+    line-height: 1.6;
+    color: #555;
+}
+
+/* ============ ONAY KUTULARI (KVKK / SÖZLEŞME) ============ */
+.feyzay-consent {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #444;
+    text-align: left;
+}
+
+.feyzay-consent input[type="checkbox"] {
+    margin-top: 2px;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #111;
+}
+
+.feyzay-consent label {
+    cursor: pointer;
+}
+
+.feyzay-consent a {
+    color: #111;
+    font-weight: 700;
+    text-decoration: underline;
+}
+
+.feyzay-consent a:hover {
+    opacity: 0.7;
+}
+
+/* ============ ÇEREZ (COOKIE) BİLDİRİMİ ============ */
+.feyzay-cookie-banner {
+    position: fixed;
+    left: 20px;
+    right: 20px;
+    bottom: -200px;
+    max-width: 480px;
+    background: #111;
+    color: #eee;
+    padding: 20px 22px;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    z-index: 10001;
+    font-size: 13px;
+    line-height: 1.6;
+    transition: bottom 0.5s ease;
+}
+
+.feyzay-cookie-banner.aktif {
+    bottom: 20px;
+}
+
+.feyzay-cookie-banner p {
+    margin: 0 0 14px 0;
+    color: #ccc;
+}
+
+.feyzay-cookie-banner a {
+    color: #fff;
+    text-decoration: underline;
+    font-weight: 700;
+}
+
+.feyzay-cookie-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.feyzay-cookie-actions button {
+    border: none;
+    padding: 10px 16px;
+    border-radius: 5px;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.feyzay-cookie-accept {
+    background: #fff;
+    color: #111;
+}
+
+.feyzay-cookie-reject {
+    background: transparent;
+    color: #ccc;
+    border: 1px solid #444 !important;
+}
+
+/* ============ YASAL METİN SAYFALARI ============ */
+.legal-page-wrapper {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 60px 25px 100px;
+    color: #ddd;
+    line-height: 1.75;
+}
+
+.legal-page-wrapper h1 {
+    font-size: 28px;
+    margin-bottom: 8px;
+    color: #fff;
+}
+
+.legal-page-wrapper .legal-updated {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 40px;
+}
+
+.legal-page-wrapper h2 {
+    font-size: 18px;
+    margin-top: 36px;
+    margin-bottom: 12px;
+    color: #fff;
+    border-bottom: 1px solid #333;
+    padding-bottom: 8px;
+}
+
+.legal-page-wrapper p,
+.legal-page-wrapper li {
+    font-size: 14px;
+    color: #bbb;
+    margin-bottom: 10px;
+}
+
+.legal-page-wrapper ul,
+.legal-page-wrapper ol {
+    padding-left: 22px;
+    margin-bottom: 14px;
+}
+
+.legal-page-wrapper strong {
+    color: #fff;
+}
+
+.legal-page-wrapper table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0 24px;
+    font-size: 13px;
+}
+
+.legal-page-wrapper table td,
+.legal-page-wrapper table th {
+    border: 1px solid #333;
+    padding: 8px 10px;
+    text-align: left;
+    color: #ccc;
+}
+
+.legal-page-wrapper table th {
+    background: #1a1a1a;
+    color: #fff;
+}
+
+.legal-fill {
+    color: #ff6b6b;
+    font-style: italic;
+}

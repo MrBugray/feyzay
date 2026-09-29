@@ -104,6 +104,25 @@
             opacity: 0.7;
         }
 
+        /* --- AÇILIR MENÜ (DROPDOWN) SİYAH TEMA DÜZELTMESİ --- */
+        .dropdown-content {
+            background-color: #222 !important;
+        }
+
+        .dropdown-content a {
+            color: #fff !important;
+            border-bottom: 1px solid #444 !important;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #333 !important;
+            color: #fff !important;
+        }
+
+        .dropdown-content p {
+            color: #aaa !important;
+        }
+
         .header-nav {
             display: flex;
             justify-content: center;
@@ -243,6 +262,50 @@
             user-select: none;
             -webkit-user-drag: none;
             transition: opacity .15s ease;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: high-quality;
+            backface-visibility: hidden;
+        }
+
+        /* Ana fotoğrafın sağında/solunda önceki-sonraki geçiş okları */
+        .pdp-stage-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 42px;
+            height: 42px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, .55);
+            color: #fff;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 6;
+            transition: background .15s, transform .15s;
+        }
+
+        .pdp-stage-arrow:hover {
+            background: rgba(0, 0, 0, .85);
+            transform: translateY(-50%) scale(1.08);
+        }
+
+        .pdp-stage-prev {
+            left: 14px;
+        }
+
+        .pdp-stage-next {
+            right: 14px;
+        }
+
+        @media (max-width: 640px) {
+            .pdp-stage-arrow {
+                width: 36px;
+                height: 36px;
+                font-size: 14px;
+            }
         }
 
         .pdp-zoom-hint {
@@ -871,7 +934,7 @@
 
     <!-- Siyah Temalı Gelişmiş Header -->
     <header class="babygiz-header">
-        <div class="top-bar">KARGO BEDAVA | 1000 TL ÜZERİ SİPARİŞLERİNİZDE</div>
+
 
         <div class="header-main">
             <div class="header-left">
@@ -985,8 +1048,10 @@
                             <button class="pdp-expand-btn" id="pdp-expand-btn" type="button" aria-label="Tam ekran görüntüle">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3"></path><path d="M16 3h3a2 2 0 0 1 2 2v3"></path><path d="M21 16v3a2 2 0 0 1-2 2h-3"></path><path d="M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
                             </button>
+                            <button class="pdp-stage-arrow pdp-stage-prev" id="pdp-stage-prev" type="button" aria-label="Önceki fotoğraf" style="${images.length > 1 ? '' : 'display:none;'}">&#10094;</button>
                             <img src="${images[0]}" id="pdp-main-img" alt="${urun.name}">
-                            <span class="pdp-zoom-hint" id="pdp-zoom-hint">🔍 Yakınlaştırmak için tıklayın</span>
+                            <button class="pdp-stage-arrow pdp-stage-next" id="pdp-stage-next" type="button" aria-label="Sonraki fotoğraf" style="${images.length > 1 ? '' : 'display:none;'}">&#10095;</button>
+                            <span class="pdp-zoom-hint" id="pdp-zoom-hint">🔍 Yakınlaştırmak için üzerine gelin</span>
                         </div>
                     </div>
 
@@ -1071,23 +1136,47 @@
             const zoomHint = document.getElementById('pdp-zoom-hint');
             const counterBadge = document.getElementById('pdp-counter');
             const thumbsContainer = document.getElementById('pdp-thumbs');
+            const stagePrevBtn = document.getElementById('pdp-stage-prev');
+            const stageNextBtn = document.getElementById('pdp-stage-next');
             let activeIndex = 0;
 
             const isDesktopHover = window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 900px)').matches;
-            const ZOOM_SCALE = 2.2;
+            const ZOOM_SCALE = 2.6;
             let isZoomed = false;
 
-            mainImg.style.transition = 'transform .15s ease-out';
             mainImg.style.willChange = 'transform';
+
+            if (zoomHint) {
+                zoomHint.textContent = isDesktopHover ? '🔍 Yakınlaştırmak için üzerine gelin' : '🔍 Yakınlaştırmak için dokunun';
+            }
 
             function resetZoom() {
                 isZoomed = false;
+                mainImg.style.transition = 'transform .25s ease-out';
                 mainImg.style.transform = 'scale(1)';
                 stage.classList.remove('is-zoomed');
                 if (zoomHint) {
                     zoomHint.style.opacity = '.95';
-                    zoomHint.textContent = '🔍 Yakınlaştırmak için tıklayın';
+                    zoomHint.textContent = isDesktopHover ? '🔍 Yakınlaştırmak için üzerine gelin' : '🔍 Yakınlaştırmak için dokunun';
                 }
+            }
+
+            function zoomAt(x, y) {
+                isZoomed = true;
+                mainImg.style.transformOrigin = `${x}% ${y}%`;
+                mainImg.style.transform = `scale(${ZOOM_SCALE})`;
+                stage.classList.add('is-zoomed');
+                if (zoomHint) {
+                    zoomHint.style.opacity = '0';
+                    zoomHint.textContent = isDesktopHover ? '✕ Uzaklaştırmak için ayrılın' : '✕ Uzaklaştırmak için dokunun';
+                }
+            }
+
+            function getPercentPos(e) {
+                const rect = mainImg.getBoundingClientRect();
+                const x = Math.min(100, Math.max(0, ((e.clientX - rect.left) / rect.width) * 100));
+                const y = Math.min(100, Math.max(0, ((e.clientY - rect.top) / rect.height) * 100));
+                return { x, y };
             }
 
             function bindThumbClicks() {
@@ -1102,8 +1191,15 @@
                 bindThumbClicks();
             }
 
+            function updateStageArrows() {
+                const cokFotoVar = images.length > 1;
+                if (stagePrevBtn) stagePrevBtn.style.display = cokFotoVar ? '' : 'none';
+                if (stageNextBtn) stageNextBtn.style.display = cokFotoVar ? '' : 'none';
+            }
+
             function setActiveImage(idx) {
                 activeIndex = idx;
+                mainImg.style.transition = 'none';
                 mainImg.src = images[idx];
                 resetZoom();
                 if (counterBadge) {
@@ -1111,43 +1207,51 @@
                     counterBadge.textContent = `${idx + 1} / ${images.length}`;
                 }
                 thumbsContainer.querySelectorAll('.pdp-thumb').forEach(t => t.classList.toggle('active', Number(t.dataset.idx) === idx));
+                updateStageArrows();
             }
 
             bindThumbClicks();
+            updateStageArrows();
 
+            function gotoPrevImage() { setActiveImage((activeIndex - 1 + images.length) % images.length); }
+            function gotoNextImage() { setActiveImage((activeIndex + 1) % images.length); }
 
-            stage.addEventListener('click', (e) => {
-                const rect = mainImg.getBoundingClientRect();
-                const x = Math.min(100, Math.max(0, ((e.clientX - rect.left) / rect.width) * 100));
-                const y = Math.min(100, Math.max(0, ((e.clientY - rect.top) / rect.height) * 100));
+            if (stagePrevBtn) stagePrevBtn.addEventListener('click', (e) => { e.stopPropagation(); gotoPrevImage(); });
+            if (stageNextBtn) stageNextBtn.addEventListener('click', (e) => { e.stopPropagation(); gotoNextImage(); });
 
-                if (!isZoomed) {
-                    isZoomed = true;
-                    mainImg.style.transformOrigin = `${x}% ${y}%`;
-                    mainImg.style.transform = `scale(${ZOOM_SCALE})`;
-                    stage.classList.add('is-zoomed');
-                    if (zoomHint) {
-                        zoomHint.style.opacity = '0';
-                        zoomHint.textContent = '✕ Uzaklaştırmak için tıklayın';
-                    }
-                } else {
-                    resetZoom();
-                }
+            stage.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowLeft') gotoPrevImage();
+                else if (e.key === 'ArrowRight') gotoNextImage();
             });
 
             if (isDesktopHover) {
+                // Masaüstünde: fareyi fotoğrafın üzerine getirir getirmez, tıklamaya gerek kalmadan
+                // yakınlaştırma başlar ve imleci akıcı biçimde takip eder (mercek/lup efekti).
+                stage.addEventListener('mouseenter', (e) => {
+                    mainImg.style.transition = 'transform .2s ease-out';
+                    const { x, y } = getPercentPos(e);
+                    zoomAt(x, y);
+                });
                 stage.addEventListener('mousemove', (e) => {
                     if (!isZoomed) return;
-                    const rect = mainImg.getBoundingClientRect();
-                    const x = Math.min(100, Math.max(0, ((e.clientX - rect.left) / rect.width) * 100));
-                    const y = Math.min(100, Math.max(0, ((e.clientY - rect.top) / rect.height) * 100));
+                    mainImg.style.transition = 'none';
+                    const { x, y } = getPercentPos(e);
                     mainImg.style.transformOrigin = `${x}% ${y}%`;
                 });
+                stage.addEventListener('mouseleave', () => resetZoom());
+            } else {
+                // Mobil/dokunmatik: dokununca yakınlaştırır, tekrar dokununca eski hâline döner.
+                stage.addEventListener('click', (e) => {
+                    if (e.target === stagePrevBtn || e.target === stageNextBtn) return;
+                    const { x, y } = getPercentPos(e);
+                    if (!isZoomed) {
+                        mainImg.style.transition = 'transform .2s ease-out';
+                        zoomAt(x, y);
+                    } else {
+                        resetZoom();
+                    }
+                });
             }
-
-            stage.addEventListener('mouseleave', () => {
-                if (isZoomed) resetZoom();
-            });
 
 
             function openLightboxGallery(startIdx) {
@@ -1159,7 +1263,7 @@
                     ${images.length > 1 ? '<button class="pdp-lb-prev" aria-label="Önceki görsel">&#10094;</button>' : ''}
                     <img class="pdp-lb-img" src="${images[idx]}" alt="${urun.name}">
                     ${images.length > 1 ? '<button class="pdp-lb-next" aria-label="Sonraki görsel">&#10095;</button>' : ''}
-                    ${images.length > 1 ? `<div class="pdp-lb-counter">${idx + 1} / ${images.length}</div>` : ''}
+                    ${images.length > 1 ? `<div class="pdp-lb-counter">${idx + 1} /${images.length}</div>` : ''}
                 `;
                 document.body.appendChild(overlay);
                 requestAnimationFrame(() => overlay.classList.add('active'));

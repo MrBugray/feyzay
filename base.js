@@ -1,13 +1,19 @@
 window.showToast = function (message, type = 'success') {
+    // Önceki kutu hâlâ ekrandaysa önce onu temizle, üst üste binmesini önle.
+    const eski = document.querySelectorAll('.feyzay-toast');
+    eski.forEach(t => t.remove());
+    if (window._feyzayToastTimer) clearTimeout(window._feyzayToastTimer);
+    if (window._feyzayToastRemoveTimer) clearTimeout(window._feyzayToastRemoveTimer);
+
     const toast = document.createElement('div');
     toast.className = `feyzay-toast ${type}`;
-    toast.style.cssText = `position:fixed; top:80px; left:-300px; padding:15px 25px; border-radius:4px; z-index:9999; transition:left 0.4s ease; font-weight:bold; color:#fff; background:${type === 'success' ? '#2ecc71' : '#e74c3c'}`;
+    toast.style.cssText = `position:fixed; top:80px; left:-300px; max-width:calc(100% - 40px); padding:15px 25px; border-radius:4px; z-index:9999; transition:left 0.4s ease; font-weight:bold; color:#fff; background:${type === 'success' ? '#2ecc71' : '#e74c3c'}`;
     toast.innerText = message;
     document.body.appendChild(toast);
     requestAnimationFrame(() => toast.style.left = '50px');
-    setTimeout(() => {
+    window._feyzayToastTimer = setTimeout(() => {
         toast.style.left = '-300px';
-        setTimeout(() => toast.remove(), 4000);
+        window._feyzayToastRemoveTimer = setTimeout(() => toast.remove(), 500);
     }, 2500);
 };
 
@@ -23,6 +29,36 @@ window.openLightbox = function (imgSrc) {
 window.openProductDetailModal = function (urun) {
     window.location.href = `detay.html?id=${urun.id}`;
 };
+
+// ============ ÇEREZ (COOKIE) BİLDİRİMİ ============
+(function () {
+    document.addEventListener('DOMContentLoaded', () => {
+        const CONSENT_KEY = 'feyzay_cerez_onayi';
+        const mevcutOnay = localStorage.getItem(CONSENT_KEY);
+        if (mevcutOnay) return; // Daha önce karar verilmiş
+
+        const banner = document.createElement('div');
+        banner.className = 'feyzay-cookie-banner';
+        banner.innerHTML = `
+            <p>Sitemizde deneyiminizi iyileştirmek için zorunlu çerezler ile, izninize bağlı olarak analiz/pazarlama çerezleri kullanıyoruz. Detaylar için <a href="gizlilik-politikasi.html" target="_blank" rel="noopener">Gizlilik ve Çerez Politikası</a>'nı inceleyebilirsiniz.</p>
+            <div class="feyzay-cookie-actions">
+                <button class="feyzay-cookie-accept" id="feyzay-cookie-accept">Tümünü Kabul Et</button>
+                <button class="feyzay-cookie-reject" id="feyzay-cookie-reject">Yalnızca Zorunlu Çerezler</button>
+            </div>
+        `;
+        document.body.appendChild(banner);
+        requestAnimationFrame(() => banner.classList.add('aktif'));
+
+        const kapat = (karar) => {
+            localStorage.setItem(CONSENT_KEY, karar);
+            banner.classList.remove('aktif');
+            setTimeout(() => banner.remove(), 500);
+        };
+
+        document.getElementById('feyzay-cookie-accept').onclick = () => kapat('tumu');
+        document.getElementById('feyzay-cookie-reject').onclick = () => kapat('zorunlu');
+    });
+})();
 
 window.askForAddress = async function (isGuest) {
     let saved = { city: '', district: '', street: '', zipcode: '' };
@@ -82,6 +118,18 @@ window.askForAddress = async function (isGuest) {
                     <div style="flex: 2;"><label style="display: block; font-size: 12px; margin-bottom: 4px; color: #777;">İlçe</label><input type="text" id="feyzay-district" value="${saved.district}" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;"></div>
                 </div>
                 <div style="margin-bottom: 20px;"><label style="display: block; font-size: 12px; margin-bottom: 4px; color: #777;">Posta Kodu</label><input type="number" id="feyzay-zipcode" value="${saved.zipcode}" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;"></div>
+
+                <div style="margin-bottom: 16px; padding-top: 12px; border-top: 1px solid #eee;">
+                    <div class="feyzay-consent">
+                        <input type="checkbox" id="feyzay-on-bilgi-onay">
+                        <label for="feyzay-on-bilgi-onay"><a href="on-bilgilendirme-formu.html" target="_blank" rel="noopener">Ön Bilgilendirme Formu</a>'nu okudum ve onaylıyorum.</label>
+                    </div>
+                    <div class="feyzay-consent">
+                        <input type="checkbox" id="feyzay-mesafeli-onay">
+                        <label for="feyzay-mesafeli-onay"><a href="mesafeli-satis-sozlesmesi.html" target="_blank" rel="noopener">Mesafeli Satış Sözleşmesi</a>'ni okudum, kabul ediyorum.</label>
+                    </div>
+                </div>
+
                 <div style="display: flex; justify-content: flex-end; gap: 10px;">
                     <button id="feyzay-btn-cancel" style="padding: 10px 15px; border: none; background: #eee; color: #333; border-radius: 4px; cursor: pointer; font-weight: bold;">İptal</button>
                     <button id="feyzay-btn-confirm" style="padding: 10px 15px; border: none; background: #111; color: #fff; border-radius: 4px; cursor: pointer; font-weight: bold;">Ödemeyi Tamamla</button>
@@ -110,6 +158,13 @@ window.askForAddress = async function (isGuest) {
             const city = document.getElementById('feyzay-city').value.trim();
             const district = document.getElementById('feyzay-district').value.trim();
             const zipcode = document.getElementById('feyzay-zipcode').value.trim();
+
+            const onBilgiOnay = document.getElementById('feyzay-on-bilgi-onay');
+            const mesafeliOnay = document.getElementById('feyzay-mesafeli-onay');
+            if (!onBilgiOnay.checked || !mesafeliOnay.checked) {
+                window.showToast('Devam etmek için Ön Bilgilendirme Formu ve Mesafeli Satış Sözleşmesi\'ni onaylamalısınız.', 'error');
+                return;
+            }
 
             let guestData = null;
             if (isGuest) {
@@ -319,6 +374,13 @@ window.viewOrdersModal = async function () {
     const aktifKullanici = JSON.parse(localStorage.getItem('feyzay_user'));
     if (!aktifKullanici) return;
 
+    // Yarış durumu koruması: bu çağrıya özel bir istek numarası veriyoruz.
+    // Cevap geldiğinde hâlâ "en güncel" istek biz miyiz diye kontrol edeceğiz;
+    // değilsek (örn. modal kapatılıp tekrar açıldıysa) eski veriyi ekrana yazmayacağız.
+    window._feyzayOrdersReqId = (window._feyzayOrdersReqId || 0) + 1;
+    const buIstekNo = window._feyzayOrdersReqId;
+    const buKullaniciEmail = aktifKullanici.email;
+
     let overlay = document.querySelector('.feyzay-modal-overlay');
     if (overlay) overlay.remove();
 
@@ -326,14 +388,11 @@ window.viewOrdersModal = async function () {
     overlay.className = 'feyzay-modal-overlay';
     overlay.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:9999; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.3s ease;';
 
-    // X butonu sağ üste eklendi
     overlay.innerHTML = `
         <div class="feyzay-modal" style="position:relative; background:#fff; padding:25px; border-radius:8px; width:90%; max-width:550px; box-shadow:0 10px 25px rgba(0,0,0,0.2); transform:translateY(-20px); transition:transform 0.3s ease; max-height:80vh; overflow-y:auto;">
-            
             <button id="orders-btn-x" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:24px; cursor:pointer; color:#888; line-height:1; padding:0; transition:color 0.2s;">&times;</button>
-            
             <h3 style="margin-top:0; color:#111;">Sipariş Geçmişim</h3>
-            <div id="orders-list-container" style="margin-top:15px; color:#333;">Yükleniyor...</div>
+            <div id="orders-list-container" style="margin-top:15px; color:#333;">Siparişleriniz yükleniyor...</div>
             
             <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
                 <button id="orders-btn-close" style="padding:10px 15px; border:none; background:#111; color:#fff; border-radius:4px; cursor:pointer; font-weight:bold;">Kapat</button>
@@ -355,16 +414,13 @@ window.viewOrdersModal = async function () {
 
     document.getElementById('orders-btn-close').onclick = closeFunc;
     document.getElementById('orders-btn-x').onclick = closeFunc;
-    document.getElementById('orders-btn-x').onmouseover = function () { this.style.color = '#111'; };
-    document.getElementById('orders-btn-x').onmouseout = function () { this.style.color = '#888'; };
 
     try {
-        // Mini fotolar için products.json'dan verileri çekiyoruz
         let allProducts = [];
         try {
             const prodRes = await fetch('products.json');
             allProducts = await prodRes.json();
-        } catch (e) { console.log('Ürün eşleşmesi için json yüklenemedi.'); }
+        } catch (e) { }
 
         const response = await fetch('/api/user/orders', {
             method: 'POST',
@@ -372,18 +428,23 @@ window.viewOrdersModal = async function () {
             body: JSON.stringify({ email: aktifKullanici.email })
         });
         const result = await response.json();
+
+        // Bu cevap gelene kadar başka bir "Siparişlerim" isteği başladıysa
+        // (ör. kullanıcı modalı kapatıp farklı bir hesapla tekrar açtıysa),
+        // bu artık geçersiz/eski bir cevaptır — ekranı güncelleme.
+        if (buIstekNo !== window._feyzayOrdersReqId || buKullaniciEmail !== (JSON.parse(localStorage.getItem('feyzay_user')) || {}).email) {
+            return;
+        }
+
         const container = document.getElementById('orders-list-container');
+        if (!container) return;
 
         if (result.success && result.orders.length > 0) {
             let html = '';
             result.orders.forEach(order => {
-                let cargoText = order.cargoState === 1 ? `Kargoya Verildi (${order.cargoTrackingCode || 'Takip No Yok'})` : 'Hazırlanıyor';
-
-                // Siparişteki her ürün için fotoğrafı buluyoruz
                 let itemsHtml = order.cartData.map(item => {
-                    let imgSrc = 'img/no-image.jpg'; // Bulunamazsa varsayılan
+                    let imgSrc = 'img/no-image.jpg';
                     let product = allProducts.find(x => x.id === item.id);
-
                     if (product) {
                         if (product.colors && product.colors.length > 0) {
                             let cObj = product.colors.find(c => c.name === item.renk) || product.colors[0];
@@ -406,14 +467,15 @@ window.viewOrdersModal = async function () {
                     `;
                 }).join('');
 
+                // Her sipariş için statü alanına bir ID (live-cargo-ID) atıyoruz
                 html += `
                     <div style="padding:15px; border:1px solid #eee; border-radius:6px; margin-bottom:10px; font-size:14px; background:#fcfcfc;">
                         <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:5px;">
                             <span>Sipariş: #${order.id}</span>
                             <span>${new Date(order.createdAt).toLocaleDateString('tr-TR')}</span>
                         </div>
-                        <div style="margin-bottom:10px; font-size:13px;">
-                            <strong>Kargo Durumu:</strong> <span style="color:${order.cargoState === 1 ? '#2ecc71' : '#f39c12'};">${cargoText}</span>
+                        <div style="margin-bottom:10px; font-size:13px; background:#fff; padding:8px 12px; border:1px solid #e1e8ed; border-radius:4px;">
+                            <strong>Kargo Durumu:</strong> <span id="live-cargo-${order.id}" style="color:#888; font-style:italic;">Aras Kargo'dan sorgulanıyor ⌛...</span>
                         </div>
                         <div style="background:#fff; padding:10px; border-radius:4px; border:1px solid #f0f0f0;">
                             ${itemsHtml}
@@ -422,6 +484,31 @@ window.viewOrdersModal = async function () {
                 `;
             });
             container.innerHTML = html;
+
+            // HTML Ekrana Çizildikten Sonra Arka Planda API'ye Paralel Kargo İstekleri Atılır
+            result.orders.forEach(async (order) => {
+                const statusSpan = document.getElementById(`live-cargo-${order.id}`);
+                if (statusSpan) {
+                    try {
+                        const cRes = await fetch('/api/user/cargo-status', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ orderId: order.id })
+                        });
+                        const cData = await cRes.json();
+
+                        if (cData.success && cData.durum) {
+                            let linkHtml = cData.takipNo ? `<a href="http://kargotakip.araskargo.com.tr/mainpage.aspx?code=${cData.takipNo}" target="_blank" style="color:#3498db; text-decoration:none; font-weight:bold; font-size:12px; margin-left:8px; border-left:1px solid #ddd; padding-left:8px;">Takip Ekranı ↗</a>` : '';
+                            statusSpan.innerHTML = `<span style="color:#2ecc71; font-weight:bold;">${cData.durum}</span> ${linkHtml}`;
+                        } else {
+                            statusSpan.innerHTML = `<span style="color:#f39c12; font-weight:bold;">Hazırlanıyor / Şube Onayı Bekliyor</span>`;
+                        }
+                    } catch (e) {
+                        statusSpan.innerHTML = `<span style="color:#e74c3c;">Durum Sorgulanamadı</span>`;
+                    }
+                }
+            });
+
         } else {
             container.innerHTML = '<p style="color:#666;">Siparişiniz bulunmuyor.</p>';
         }
@@ -666,7 +753,13 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('siparislerim-btn').onclick = (e) => { e.preventDefault(); dropdown.classList.remove('goster'); window.viewOrdersModal(); };
             document.getElementById('adres-duzenle-btn').onclick = (e) => { e.preventDefault(); dropdown.classList.remove('goster'); window.editAddressModal(); };
             document.getElementById('profil-duzenle-btn').onclick = (e) => { e.preventDefault(); dropdown.classList.remove('goster'); window.editProfileModal(); };
-            document.getElementById('cikis-yap-btn').onclick = (e) => { e.preventDefault(); localStorage.removeItem('feyzay_user'); window.location.reload(); };
+            document.getElementById('cikis-yap-btn').onclick = (e) => {
+                e.preventDefault();
+                localStorage.removeItem('feyzay_user');
+                // Hesap değiştirildiğinde bir önceki kullanıcının sepeti yeni hesapta görünmesin diye sepeti de temizliyoruz.
+                localStorage.setItem('feyzay_sepet', JSON.stringify([]));
+                window.location.reload();
+            };
         }
     }
 });
@@ -725,6 +818,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 return window.showToast('Şifre en az 6 haneli, 1 büyük ve 1 küçük harf içermelidir!', 'error');
             }
 
+            const uyelikOnay = document.getElementById('signup-uyelik-onay');
+            const kvkkOnay = document.getElementById('signup-kvkk-onay');
+            const pazarlamaOnay = document.getElementById('signup-pazarlama-onay');
+            if (uyelikOnay && !uyelikOnay.checked) return window.showToast('Devam etmek için Üyelik Sözleşmesi\'ni onaylamalısınız.', 'error');
+            if (kvkkOnay && !kvkkOnay.checked) return window.showToast('Devam etmek için KVKK Aydınlatma Metni\'ni onaylamalısınız.', 'error');
+            const marketingConsent = pazarlamaOnay ? pazarlamaOnay.checked : false;
+
 
             const btn = signupForm.querySelector('button[type="submit"]');
             const originalText = btn ? btn.innerText : 'Hesap Oluştur';
@@ -738,7 +838,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const res = await fetch('/api/signup', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ firstName, lastName, email, password })
+                    body: JSON.stringify({ firstName, lastName, email, password, marketingConsent })
                 });
                 const d = await res.json();
 

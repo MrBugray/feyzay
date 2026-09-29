@@ -394,32 +394,6 @@
             font-size: 12px;
         }
 
-        .adm-cargo-form {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-        }
-
-        .adm-cargo-form input {
-            flex: 1;
-            padding: 9px 12px;
-            border: 1.5px solid var(--line);
-            border-radius: 6px;
-            font-size: 13px;
-        }
-
-        .adm-cargo-form button {
-            padding: 9px 14px;
-            border-radius: 6px;
-            border: none;
-            background: var(--ink);
-            color: #fff;
-            font-size: 12.5px;
-            font-weight: 700;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
         .adm-empty {
             text-align: center;
             color: var(--muted);
@@ -1117,7 +1091,7 @@
                     const imgSrc = siparisUrunGorsel(item.id, item.renk);
                     return `
                     <div class="adm-item-row" style="display: flex; align-items: center; gap: 15px;">
-                        <img src="${imgSrc}" style="width: 100px; height: 150px; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                        <img src="${imgSrc}" style="width: 75px; height: 100px; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
                         <div>
                             <strong style="font-size: 14.5px;">${item.name}</strong> × ${item.adet}
                             <div class="adm-item-meta" style="margin-top: 4px;">${[item.beden, item.renk].filter(Boolean).join(' · ')} · ID: ${item.id}</div>
@@ -1133,16 +1107,9 @@
                 const kargoAlani = o.cargoState === 1
                     ? `
                         <p style="font-size:13px; margin-top:4px;">Takip Kodu: <strong>${o.cargoTrackingCode}</strong></p>
-                        <div class="adm-cargo-form">
-                            <input type="text" placeholder="Yeni takip kodu" id="cargo-input-${o.id}">
-                            <button onclick="kargoyaVer(${o.id})">Güncelle</button>
-                        </div>
                     `
                     : `
-                        <div class="adm-cargo-form">
-                            <input type="text" placeholder="Kargo takip kodu" id="cargo-input-${o.id}">
-                            <button onclick="kargoyaVer(${o.id})">Kargoya Ver</button>
-                        </div>
+                        <p style="font-size:13px; margin-top:4px; color:var(--muted);">Kargo takip numarası sistem tarafından otomatik oluşturulacaktır.</p>
                     `;
 
                 return `
@@ -1173,27 +1140,6 @@
                 `;
             }).join('');
         }
-
-        async function kargoyaVer(orderId) {
-            const input = document.getElementById('cargo-input-' + orderId);
-            const kod = input.value.trim();
-            if (!kod) return toast('Lütfen takip kodu girin.', 'error');
-            try {
-                const res = await adminFetch('/api/admin/orders/' + orderId + '/cargo', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ trackingCode: kod })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    toast('Sipariş #' + orderId + ' güncellendi.');
-                    yukleSiparisler();
-                } else {
-                    toast(data.message || 'Güncellenemedi.', 'error');
-                }
-            } catch (e) { }
-        }
-        window.kargoyaVer = kargoyaVer;
 
         document.getElementById('adm-order-search').addEventListener('input', siparisleriCiz);
         document.getElementById('adm-refresh-orders').onclick = yukleSiparisler;

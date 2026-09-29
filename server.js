@@ -31,9 +31,16 @@ db.serialize(() => {
         city TEXT,
         district TEXT,
         street TEXT,
-        zipcode TEXT
+        zipcode TEXT,
+        marketing_consent INTEGER DEFAULT 0,
+        consent_date DATETIME
     )`);
 
+    // Eski veritabanlarında hata vermemesi için güvenli kolon eklemeleri
+    db.run(`ALTER TABLE users ADD COLUMN marketing_consent INTEGER DEFAULT 0`, () => { });
+    db.run(`ALTER TABLE users ADD COLUMN consent_date DATETIME`, () => { });
+
+    // SİPARİŞ TABLOSUNA TELEFON NUMARASI İÇİN "phone TEXT" EKLENDİ
     db.run(`CREATE TABLE IF NOT EXISTS orders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         merchant_oid TEXT,
@@ -44,6 +51,7 @@ db.serialize(() => {
         district TEXT,
         street TEXT,
         zipcode TEXT,
+        phone TEXT,
         payment_status INTEGER DEFAULT 0,
         cargo_state INTEGER DEFAULT 0,
         cargo_tracking_code TEXT DEFAULT NULL,
@@ -57,11 +65,13 @@ db.serialize(() => {
         urun_id TEXT NOT NULL,
         urun_name TEXT NOT NULL,
         adet INTEGER NOT NULL,
+        renk TEXT,
         FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE
     )`);
 
-
+    // Eski veritabanlarında hata vermemesi için güvenli kolon eklemeleri
     db.run(`ALTER TABLE order_items ADD COLUMN renk TEXT`, () => { });
+    db.run(`ALTER TABLE orders ADD COLUMN phone TEXT`, () => { });
 });
 
 function encryptData(text) {
@@ -97,14 +107,158 @@ function hashPassword(password) {
     return crypto.createHash('sha256').update(password).digest('hex');
 }
 
+// =====================================================================
+// ================= ARAS KARGO CANLI SİPARİŞ İLETİMİ ==================
+// =====================================================================
+async function sendToArasKargo(orderId, orderObj) {
+    const apiUrl = "https://customerws.araskargo.com.tr/arascargoservice.asmx"; // CANLI ORTAM
+    const userName = process.env.ARAS_USERNAME;
+    const password = process.env.ARAS_PASSWORD;
+
+    if (!userName || !password) {
+        console.error("Aras Kargo API bilgileri (.env) eksik. Kargo entegrasyonu atlanıyor.");
+        return null;
+    }
+
+    const waybillNo = "FZ" + Date.now().toString().slice(-6) + orderId;
+    const barcodeNo = waybillNo + "01";
+    const integrationCode = "FZ-" + orderId;
+
+    const xmlPayload = `
+    <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:tem="http://tempuri.org/">
+       <soap:Header/>
+       <soap:Body>
+          <SetOrder xmlns="http://tempuri.org/">
+             <orderInfo>
+                <Order>
+                   <UserName>${userName}</UserName>
+                   <Password>${password}</Password>
+                   <TradingWaybillNumber>${waybillNo}</TradingWaybillNumber>
+                   <ReceiverName>${orderObj.firstName} ${orderObj.lastName}</ReceiverName>
+                   <ReceiverAddress>${orderObj.addressObj.street}</ReceiverAddress>               
+                   <ReceiverPhone1>${orderObj.phone || '05555555555'}</ReceiverPhone1>
+                   <ReceiverCityName>${orderObj.addressObj.city}</ReceiverCityName>
+                   <ReceiverTownName>${orderObj.addressObj.district}</ReceiverTownName>
+                   <PieceCount>1</PieceCount>
+                   <IntegrationCode>${integrationCode}</IntegrationCode>
+                   <PayorTypeCode>1</PayorTypeCode> 
+                   <IsWorldWide>0</IsWorldWide>
+                   <PieceDetails>
+                      <PieceDetail>
+                         <VolumetricWeight>1</VolumetricWeight>
+                         <Weight>1</Weight>
+                         <BarcodeNumber>${barcodeNo}</BarcodeNumber>
+                         <ProductNumber />
+                         <Description>Web Siparis ID: ${orderId}</Description>
+                      </PieceDetail>
+                   </PieceDetails>
+                </Order>
+             </orderInfo>
+             <userName>${userName}</userName>
+             <password>${password}</password>
+          </SetOrder>
+       </soap:Body>
+    </soap:Envelope>
+    `;
+
+    try {
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/soap+xml; charset=utf-8'
+            },
+            body: xmlPayload
+        });
+
+        const responseText = await response.text();
+
+        if (responseText.includes('<ResultCode>0</ResultCode>')) {
+            console.log(`[ARAS] Sipariş aktarımı BAŞARILI (Sipariş ID: ${orderId})`);
+            return responseText;
+        } else {
+            console.error(`[ARAS] Aktarım HATASI (Sipariş ID: ${orderId}):`, responseText);
+            return null;
+        }
+    } catch (error) {
+        console.error("[ARAS] Sunucu Hatası:", error);
+        return null;
+    }
+}
+
+// =====================================================================
+// ================= ARAS KARGO CANLI DURUM SORGULAMA ==================
+// =====================================================================
+app.post('/api/user/cargo-status', async (req, res) => {
+    const { orderId } = req.body;
+
+    const userName = process.env.ARAS_QUERY_USERNAME;
+    const password = process.env.ARAS_QUERY_PASSWORD;
+    const customerCode = process.env.ARAS_MUSTERI_KODU || '2623003491526';
+
+    if (!userName || !password) {
+        return res.json({ success: false, message: "Kargo API bilgileri eksik." });
+    }
+
+    const loginInfo = `<LoginInfo><UserName>${userName}</UserName><Password>${password}</Password><CustomerCode>${customerCode}</CustomerCode></LoginInfo>`;
+    const queryInfo = `<QueryInfo><QueryType>11</QueryType><IntegrationCode>FZ-${orderId}</IntegrationCode></QueryInfo>`;
+
+    const soapPayload = `
+    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tem="http://tempuri.org/">
+       <soapenv:Header/>
+       <soapenv:Body>
+          <tem:GetQueryJSON>
+             <tem:loginInfo><![CDATA[${loginInfo}]]></tem:loginInfo>
+             <tem:queryInfo><![CDATA[${queryInfo}]]></tem:queryInfo>
+          </tem:GetQueryJSON>
+       </soapenv:Body>
+    </soapenv:Envelope>`;
+
+    try {
+        const response = await fetch("https://customerservices.araskargo.com.tr/ArasCargoCustomerIntegrationService/ArasCargoIntegrationService.svc", {
+            method: "POST",
+            headers: {
+                "Content-Type": "text/xml; charset=utf-8",
+                "SOAPAction": "http://tempuri.org/IArasCargoIntegrationService/GetQueryJSON"
+            },
+            body: soapPayload
+        });
+
+        const text = await response.text();
+        const match = text.match(/<GetQueryJSONResult>([\s\S]*?)<\/GetQueryJSONResult>/);
+
+        if (match && match[1]) {
+            let cleanJsonStr = match[1].replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+            const parsedData = JSON.parse(cleanJsonStr);
+
+            if (parsedData && parsedData.QueryResult && parsedData.QueryResult.length > 0) {
+                const cargoData = parsedData.QueryResult[0];
+                return res.json({
+                    success: true,
+                    durum: cargoData.DURUMU,
+                    takipNo: cargoData.KARGO_TAKIP_NO
+                });
+            }
+        }
+        res.json({ success: false, message: 'Şube onayı bekleniyor' });
+    } catch (err) {
+        console.error("Kargo Sorgulama Hatası:", err);
+        res.json({ success: false, message: 'Sorgulanamadı' });
+    }
+});
+
+// =====================================================================
+// ==================== KULLANICI & SİPARİŞ İŞLEMLERİ ==================
+// =====================================================================
+
 app.post('/api/signup', (req, res) => {
-    const { firstName, lastName, email, password } = req.body;
+    const { firstName, lastName, email, password, marketingConsent } = req.body;
     if (!firstName || !lastName || !email || !password) {
         return res.status(400).json({ success: false, message: 'Tüm alanları doldurun.' });
     }
     const hashedPassword = hashPassword(password);
-    const sql = `INSERT INTO users (first_name, last_name, email, password) VALUES (?, ?, ?, ?)`;
-    db.run(sql, [firstName, lastName, email, hashedPassword], function (err) {
+    // marketing_consent: KVKK kapsamında elektronik ileti izni; consent_date, rızanın verildiği anı kanıtlamak için tutulur.
+    const sql = `INSERT INTO users (first_name, last_name, email, password, marketing_consent, consent_date) VALUES (?, ?, ?, ?, ?, ?)`;
+    db.run(sql, [firstName, lastName, email, hashedPassword, marketingConsent ? 1 : 0, new Date().toISOString()], function (err) {
         if (err) {
             if (err.message.includes('UNIQUE constraint failed')) {
                 return res.status(400).json({ success: false, message: 'Bu E-posta zaten kayıtlı.' });
@@ -130,11 +284,10 @@ app.post('/api/login', (req, res) => {
 
 app.post('/api/checkout', async (req, res) => {
     try {
-        const { isGuest, email, firstName, lastName, addressObj, cart } = req.body;
+        const { isGuest, email, firstName, lastName, addressObj, phone, cart } = req.body;
         if (!addressObj || !cart || cart.length === 0) {
-            return res.status(400).json({ success: false, message: 'Missing info or empty cart.' });
+            return res.status(400).json({ success: false, message: 'Bilgiler eksik veya sepet boş.' });
         }
-
 
         const totalAmount = cart.reduce((acc, item) => acc + ((item.fiyat || 0) * (item.adet || 1)), 0);
         const payment_amount = Math.round(totalAmount * 100);
@@ -146,11 +299,10 @@ app.post('/api/checkout', async (req, res) => {
         const merchant_oid = "FEYZAY" + Date.now() + Math.floor(Math.random() * 1000);
         const user_name = firstName + " " + lastName;
         const user_address = addressObj.city + " " + addressObj.district + " " + addressObj.street;
-        const user_phone = "05555555555";
+        const user_phone = phone || "05555555555";
 
-        const merchant_ok_url = "http://localhost:3000/api/paytr-success";
-        const merchant_fail_url = "http://localhost:3000/api/paytr-fail";
-
+        const merchant_ok_url = `${process.env.SITE_URL}/api/paytr-success`;
+        const merchant_fail_url = `${process.env.SITE_URL}/api/paytr-fail`;
 
         const user_basket = JSON.stringify(cart.map(item => [
             item.isim || 'Urun',
@@ -164,7 +316,7 @@ app.post('/api/checkout', async (req, res) => {
         }
         const timeout_limit = 30;
         const debug_on = 1;
-        const test_mode = 1;
+        const test_mode = 0; // PAYTR CANLI MOD
         const no_installment = 0;
         const max_installment = 0;
         const currency = "TL";
@@ -207,16 +359,17 @@ app.post('/api/checkout', async (req, res) => {
             const encDistrict = encryptData(addressObj.district || '');
             const encStreet = encryptData(addressObj.street || '');
             const encZipcode = encryptData(addressObj.zipcode || '');
+            const encPhone = encryptData(phone || '');
 
-            const orderSql = `INSERT INTO orders (merchant_oid, email, first_name, last_name, city, district, street, zipcode, payment_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)`;
-            db.run(orderSql, [merchant_oid, encEmail, encFirstName, encLastName, encCity, encDistrict, encStreet, encZipcode], function (err) {
+            // SİPARİŞ "ÖDEME BEKLİYOR" DURUMUNDA (payment_status: 0) KAYDEDİLİYOR
+            const orderSql = `INSERT INTO orders (merchant_oid, email, first_name, last_name, city, district, street, zipcode, phone, payment_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`;
+            db.run(orderSql, [merchant_oid, encEmail, encFirstName, encLastName, encCity, encDistrict, encStreet, encZipcode, encPhone], async function (err) {
                 if (err) return res.status(500).json({ success: false, message: 'Database error.' });
 
                 const lastOrderId = this.lastID;
                 const itemSql = `INSERT INTO order_items (order_id, beden, urun_id, urun_name, adet, renk) VALUES (?, ?, ?, ?, ?, ?)`;
 
                 cart.forEach(item => {
-
                     db.run(itemSql, [lastOrderId, item.beden || 'Standart', item.id, item.isim || '', item.adet || 1, item.renk || null]);
                 });
 
@@ -224,6 +377,7 @@ app.post('/api/checkout', async (req, res) => {
                     db.run(`UPDATE users SET city=?, district=?, street=?, zipcode=? WHERE email=?`, [encCity, encDistrict, encStreet, encZipcode, email]);
                 }
 
+                // ARAS KARGO'YA GÖNDERME KODUNU BURADAN SİLDİK (Callback'e taşıdık)
                 return res.json({ success: true, token: paytrData.token });
             });
         } else {
@@ -234,7 +388,6 @@ app.post('/api/checkout', async (req, res) => {
     }
 });
 
-
 app.post('/api/paytr-callback', (req, res) => {
     const { merchant_oid, status, total_amount, hash } = req.body;
     const merchant_id = process.env.PAYTR_MERCHANT_ID;
@@ -242,16 +395,41 @@ app.post('/api/paytr-callback', (req, res) => {
     const merchant_salt = process.env.PAYTR_MERCHANT_SALT;
     const hash_str = merchant_oid + merchant_salt + status + total_amount;
     const generated_hash = crypto.createHmac('sha256', merchant_key).update(hash_str).digest('base64');
+
     if (hash !== generated_hash) {
         return res.send('PAYTR notification failed: bad hash');
     }
+
     if (status === 'success') {
-        db.run(`UPDATE orders SET payment_status = 1 WHERE merchant_oid = ?`, [merchant_oid]);
+        // Ödeme onaylandıysa sipariş durumunu güncelle ve Aras Kargo'ya ilet
+        db.get(`SELECT * FROM orders WHERE merchant_oid = ?`, [merchant_oid], (err, order) => {
+            if (order && order.payment_status === 0) { // Sadece henüz onaylanmamış siparişler için çalışır
+                db.run(`UPDATE orders SET payment_status = 1 WHERE merchant_oid = ?`, [merchant_oid], () => {
+                    // Müşteri verilerinin şifrelerini çözüp Aras Kargo API'sine yolluyoruz
+                    const orderObj = {
+                        firstName: decryptData(order.first_name),
+                        lastName: decryptData(order.last_name),
+                        phone: decryptData(order.phone) || '05555555555',
+                        addressObj: {
+                            city: decryptData(order.city),
+                            district: decryptData(order.district),
+                            street: decryptData(order.street)
+                        },
+                        cart: [] // Hata vermemesi için boş dizi ekliyoruz
+                    };
+
+                    sendToArasKargo(order.id, orderObj).then(() => {
+                        console.log(`[PAYTR] Sipariş #${order.id} ödendi ve kargoya iletildi.`);
+                    });
+                });
+            }
+        });
     } else {
         db.run(`UPDATE orders SET payment_status = -1 WHERE merchant_oid = ?`, [merchant_oid]);
     }
     res.send('OK');
 });
+
 app.get('/api/paytr-success', (req, res) => {
     res.send(`
         <div style="text-align:center; font-family:sans-serif; margin-top:100px;">
@@ -267,6 +445,7 @@ app.get('/api/paytr-success', (req, res) => {
         </div>
     `);
 });
+
 app.get('/api/paytr-fail', (req, res) => {
     res.send(`
         <div style="text-align:center; font-family:sans-serif; margin-top:100px;">
@@ -282,6 +461,7 @@ app.get('/api/paytr-fail', (req, res) => {
         </div>
     `);
 });
+
 app.post('/api/user/get-address', (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ success: false });
@@ -298,6 +478,7 @@ app.post('/api/user/get-address', (req, res) => {
         });
     });
 });
+
 app.post('/api/user/address', (req, res) => {
     const { email, city, district, street, zipcode } = req.body;
     if (!email) return res.status(400).json({ success: false, message: 'Kimlik eksik.' });
@@ -307,6 +488,7 @@ app.post('/api/user/address', (req, res) => {
         res.json({ success: true, message: 'Adres başarıyla güncellendi!' });
     });
 });
+
 app.post('/api/user/update-profile', (req, res) => {
     const { currentEmail, firstName, lastName, newEmail, oldPassword, newPassword } = req.body;
     if (!currentEmail || !firstName || !lastName || !newEmail) {
@@ -344,12 +526,17 @@ app.post('/api/user/update-profile', (req, res) => {
         }
     });
 });
+
 app.post('/api/user/orders', (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ success: false });
 
+    // Not: Sadece ödemesi onaylanmış (payment_status = 1) siparişler müşteriye gösterilir.
+    // "Ödeme Bekliyor" (0) veya "Başarısız" (-1) durumundaki siparişler, PayTR ödemesi
+    // tamamlanana/onaylanana kadar müşterinin Siparişlerim ekranında görünmez.
     db.all(`SELECT o.*, i.beden, i.urun_id, i.urun_name, i.adet, i.renk FROM orders o 
             LEFT JOIN order_items i ON o.id = i.order_id 
+            WHERE o.payment_status = 1
             ORDER BY o.id DESC`, [], (err, rows) => {
         if (err) return res.status(500).json({ success: false });
 
@@ -385,6 +572,11 @@ app.post('/api/user/orders', (req, res) => {
         res.json({ success: true, orders: finalOrders });
     });
 });
+
+// =====================================================================
+// ========================= ADMİN İŞLEMLERİ ===========================
+// =====================================================================
+
 const PRODUCTS_PATH = path.join(__dirname, 'products.json');
 
 function adminAuth(req, res, next) {
@@ -414,6 +606,7 @@ app.post('/api/admin/login', (req, res) => {
     }
     return res.status(401).json({ success: false, message: 'Şifre hatalı.' });
 });
+
 app.get('/api/admin/orders', adminAuth, (req, res) => {
     db.all(`SELECT o.*, i.beden, i.urun_id, i.urun_name, i.adet, i.renk FROM orders o 
             LEFT JOIN order_items i ON o.id = i.order_id 
@@ -526,6 +719,7 @@ app.get('/api/admin/orders/export', adminAuth, (req, res) => {
         }
     });
 });
+
 app.get('/api/admin/products', adminAuth, (req, res) => {
     try {
         res.json({ success: true, products: urunleriOku() });
@@ -533,6 +727,7 @@ app.get('/api/admin/products', adminAuth, (req, res) => {
         res.status(500).json({ success: false, message: 'products.json okunamadı.' });
     }
 });
+
 app.post('/api/admin/products', adminAuth, (req, res) => {
     try {
         const urunler = urunleriOku();
@@ -550,14 +745,12 @@ app.post('/api/admin/products', adminAuth, (req, res) => {
         res.status(500).json({ success: false, message: 'Ürün kaydedilemedi.' });
     }
 });
+
 app.put('/api/admin/products/:id', adminAuth, (req, res) => {
     try {
         const urunler = urunleriOku();
         const idx = urunler.findIndex(u => u.id === req.params.id);
-        if (idx === -1) return res.status(404).json({
-            success: false, message: 'Ürün bulunamadı.'
-
-        });
+        if (idx === -1) return res.status(404).json({ success: false, message: 'Ürün bulunamadı.' });
 
         if (req.body.id && req.body.id !== req.params.id && urunler.some(u => u.id === req.body.id)) {
             return res.status(400).json({ success: false, message: 'Bu ürün ID zaten kullanılıyor.' });
@@ -583,12 +776,10 @@ app.delete('/api/admin/products/:id', adminAuth, (req, res) => {
     }
 });
 
-
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
-
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Sunucu http://localhost:${PORT} adresinde açık `);
+    console.log(`Sunucu ${process.env.SITE_URL || `http://localhost:${PORT}`} adresinde çalışıyor`);
 });
