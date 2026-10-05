@@ -316,7 +316,7 @@ window.editProfileModal = function () {
             <div style="margin-top:20px; padding-top:15px; border-top:1px dashed #ddd;">
                 <h4 style="margin:0 0 10px 0; color:#555;">Şifre Değiştir</h4>
                 <div style="margin-bottom:12px;"><input type="password" id="prof-old-password" placeholder="Mevcut Şifre" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;"></div>
-                <div style="margin-bottom:12px;"><input type="password" id="prof-new-password" placeholder="Yeni Şifre" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;"></div>
+                <div style="margin-bottom:12px;"><input type="password" id="prof-new-password" placeholder="Yeni Şifre (en az 6 haneli, 1 büyük 1 küçük harf, boşluksuz)" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;"></div>
                 <div style="margin-bottom:20px;"><input type="password" id="prof-new-password-confirm" placeholder="Yeni Şifre (Tekrar)" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;"></div>
             </div>
             <div style="display:flex; justify-content:flex-end; gap:10px;">
@@ -350,6 +350,9 @@ window.editProfileModal = function () {
         if (oldPassword || newPassword || newPasswordConfirm) {
             if (!oldPassword || !newPassword || !newPasswordConfirm) return window.showToast('Tüm şifre alanlarını doldurun.', 'error');
             if (newPassword !== newPasswordConfirm) return window.showToast('Yeni şifreler uyuşmuyor.', 'error');
+            if (!(/^(?=.*[a-z])(?=.*[A-Z])(?!.*\s).{6,}$/.test(newPassword))) {
+                return window.showToast('Yeni şifre en az 6 haneli, 1 büyük ve 1 küçük harf içermeli, boşluk içermemelidir!', 'error');
+            }
         }
 
         try {
@@ -814,8 +817,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (password !== passwordConfirm) return window.showToast('Şifreler eşleşmiyor!', 'error');
 
 
-            if (!(/^(?=.*[a-z])(?=.*[A-Z]).{6,}$/.test(password))) {
-                return window.showToast('Şifre en az 6 haneli, 1 büyük ve 1 küçük harf içermelidir!', 'error');
+            if (!(/^(?=.*[a-z])(?=.*[A-Z])(?!.*\s).{6,}$/.test(password))) {
+                return window.showToast('Şifre en az 6 haneli, 1 büyük ve 1 küçük harf içermeli, boşluk içermemelidir!', 'error');
             }
 
             const uyelikOnay = document.getElementById('signup-uyelik-onay');

@@ -255,6 +255,11 @@ app.post('/api/signup', (req, res) => {
     if (!firstName || !lastName || !email || !password) {
         return res.status(400).json({ success: false, message: 'Tüm alanları doldurun.' });
     }
+    // İstemci tarafındaki kural (en az 6 karakter, 1 büyük, 1 küçük harf, boşluksuz) sunucuda da uygulanır;
+    // tarayıcı kontrolü atlatılsa (ör. doğrudan API isteğiyle) dahi kural bozulamaz.
+    if (!(/^(?=.*[a-z])(?=.*[A-Z])(?!.*\s).{6,}$/.test(password))) {
+        return res.status(400).json({ success: false, message: 'Şifre en az 6 haneli, 1 büyük ve 1 küçük harf içermeli, boşluk içermemelidir.' });
+    }
     const hashedPassword = hashPassword(password);
     // marketing_consent: KVKK kapsamında elektronik ileti izni; consent_date, rızanın verildiği anı kanıtlamak için tutulur.
     const sql = `INSERT INTO users (first_name, last_name, email, password, marketing_consent, consent_date) VALUES (?, ?, ?, ?, ?, ?)`;
@@ -516,6 +521,11 @@ app.post('/api/user/update-profile', (req, res) => {
             });
         };
         if (oldPassword && newPassword) {
+            // Kayıt formundaki ile aynı şifre kuralı: en az 6 karakter, en az 1 büyük ve 1 küçük harf.
+            // Bu kontrol istemci (tarayıcı) tarafında atlatılabileceği için burada, sunucuda tekrar uygulanır.
+            if (!(/^(?=.*[a-z])(?=.*[A-Z])(?!.*\s).{6,}$/.test(newPassword))) {
+                return res.status(400).json({ success: false, message: 'Yeni şifre en az 6 haneli, 1 büyük ve 1 küçük harf içermeli, boşluk içermemelidir.' });
+            }
             const hashedOld = hashPassword(oldPassword);
             if (user.password !== hashedOld) {
                 return res.status(400).json({ success: false, message: 'Mevcut şifreniz hatalı.' });
