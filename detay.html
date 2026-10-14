@@ -1000,7 +1000,7 @@
 
             let images = colorList
                 ? currentColor().images
-                : ((urun.images && urun.images.length > 0) ? urun.images : [urun.image || 'img/no-image.jpg']);
+                : ((urun.images && urun.images.length > 0) ? urun.images : [urun.image || 'img/no-image.svg']);
 
             const anaTag = (urun.tags && urun.tags.length > 0) ? urun.tags[0] : null;
             let currentStock = colorList ? currentColor().stock : urun.stock;
@@ -1014,7 +1014,7 @@
             // MİNİ FOTOĞRAFLI RENK SEÇİMİ ENTEGRASYONU
             const colorsHtml = colorList
                 ? colorList.map((c, idx) => {
-                    const thumbImg = (c.images && c.images.length > 0) ? c.images[0] : 'img/no-image.jpg';
+                    const thumbImg = (c.images && c.images.length > 0) ? c.images[0] : 'img/no-image.svg';
                     return `
                         <button class="pdp-color-swatch ${idx === 0 ? 'active' : ''}" data-idx="${idx}" title="${c.name}" aria-label="${c.name}">
                             <img src="${thumbImg}" alt="${c.name}">

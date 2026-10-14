@@ -1,5 +1,39 @@
+// Kullanıcı ve ürün verileri innerHTML'e yazılmadan önce kaçırılır.
+window.feyzayEsc = function (value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[ch]);
+};
+window.feyzayKimlik = (async () => {
+    try {
+        const res = await fetch('/api/me');
+        const data = await res.json();
+        if (!data.user) {
+            localStorage.removeItem('feyzay_user');
+            return null;
+        }
+        localStorage.setItem('feyzay_user', JSON.stringify({
+            firstName: data.user.firstName,
+            lastName: data.user.lastName,
+            email: data.user.email
+        }));
+        return data.user;
+    } catch (e) {
+        return JSON.parse(localStorage.getItem('feyzay_user'));
+    }
+})();
+
+
+window.feyzayOturumKontrol = function (yanit) {
+    if (yanit && yanit.status === 401) {
+        localStorage.removeItem('feyzay_user');
+        window.location.reload();
+        return true;
+    }
+    return false;
+};
+
 window.showToast = function (message, type = 'success') {
-    // Önceki kutu hâlâ ekrandaysa önce onu temizle, üst üste binmesini önle.
     const eski = document.querySelectorAll('.feyzay-toast');
     eski.forEach(t => t.remove());
     if (window._feyzayToastTimer) clearTimeout(window._feyzayToastTimer);
@@ -63,13 +97,8 @@ window.openProductDetailModal = function (urun) {
 window.askForAddress = async function (isGuest) {
     let saved = { city: '', district: '', street: '', zipcode: '' };
     if (!isGuest) {
-        const aktifKullanici = JSON.parse(localStorage.getItem('feyzay_user'));
         try {
-            const res = await fetch('/api/user/get-address', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: aktifKullanici.email })
-            });
+            const res = await fetch('/api/user/get-address', { method: 'POST' });
             const data = await res.json();
             if (data.success && data.address) saved = data.address;
         } catch (e) { }
@@ -110,14 +139,14 @@ window.askForAddress = async function (isGuest) {
                 <p style="font-size:14px; color:#666; margin-bottom:20px;">Lütfen ürünün teslim edileceği adres bilgilerini girin.</p>
                 ${guestHtml}
                 <h4 style="margin-top: 0; margin-bottom: 10px; color: #555;">Adres Bilgileriniz</h4>
-                <div style="margin-bottom: 12px;"><label style="display: block; font-size: 12px; margin-bottom: 4px; color: #777;">Mahalle</label><input type="text" id="feyzay-mahalle" value="${parsedStreet.mahalle}" placeholder="Örn: Atatürk Mah." style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;"></div>
-                <div style="margin-bottom: 12px;"><label style="display: block; font-size: 12px; margin-bottom: 4px; color: #777;">Cadde / Sokak</label><input type="text" id="feyzay-cadde" value="${parsedStreet.cadde}" placeholder="Örn: Vatan Caddesi" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;"></div>
-                <div style="margin-bottom: 12px;"><label style="display: block; font-size: 12px; margin-bottom: 4px; color: #777;">Bina / Daire No</label><input type="text" id="feyzay-binano" value="${parsedStreet.binaNo}" placeholder="Örn: No:12 D:4" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;"></div>
+                <div style="margin-bottom: 12px;"><label style="display: block; font-size: 12px; margin-bottom: 4px; color: #777;">Mahalle</label><input type="text" id="feyzay-mahalle" value="${feyzayEsc(parsedStreet.mahalle)}" placeholder="Örn: Atatürk Mah." style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;"></div>
+                <div style="margin-bottom: 12px;"><label style="display: block; font-size: 12px; margin-bottom: 4px; color: #777;">Cadde / Sokak</label><input type="text" id="feyzay-cadde" value="${feyzayEsc(parsedStreet.cadde)}" placeholder="Örn: Vatan Caddesi" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;"></div>
+                <div style="margin-bottom: 12px;"><label style="display: block; font-size: 12px; margin-bottom: 4px; color: #777;">Bina / Daire No</label><input type="text" id="feyzay-binano" value="${feyzayEsc(parsedStreet.binaNo)}" placeholder="Örn: No:12 D:4" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;"></div>
                 <div style="display: flex; gap: 10px; margin-bottom: 12px;">
-                    <div style="flex: 2;"><label style="display: block; font-size: 12px; margin-bottom: 4px; color: #777;">Şehir / İl</label><input type="text" id="feyzay-city" value="${saved.city}" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;"></div>
-                    <div style="flex: 2;"><label style="display: block; font-size: 12px; margin-bottom: 4px; color: #777;">İlçe</label><input type="text" id="feyzay-district" value="${saved.district}" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;"></div>
+                    <div style="flex: 2;"><label style="display: block; font-size: 12px; margin-bottom: 4px; color: #777;">Şehir / İl</label><input type="text" id="feyzay-city" value="${feyzayEsc(saved.city)}" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;"></div>
+                    <div style="flex: 2;"><label style="display: block; font-size: 12px; margin-bottom: 4px; color: #777;">İlçe</label><input type="text" id="feyzay-district" value="${feyzayEsc(saved.district)}" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;"></div>
                 </div>
-                <div style="margin-bottom: 20px;"><label style="display: block; font-size: 12px; margin-bottom: 4px; color: #777;">Posta Kodu</label><input type="number" id="feyzay-zipcode" value="${saved.zipcode}" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;"></div>
+                <div style="margin-bottom: 20px;"><label style="display: block; font-size: 12px; margin-bottom: 4px; color: #777;">Posta Kodu</label><input type="number" id="feyzay-zipcode" value="${feyzayEsc(saved.zipcode)}" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;"></div>
 
                 <div style="margin-bottom: 16px; padding-top: 12px; border-top: 1px solid #eee;">
                     <div class="feyzay-consent">
@@ -195,11 +224,8 @@ window.editAddressModal = async function () {
 
     let saved = { city: '', district: '', street: '', zipcode: '' };
     try {
-        const res = await fetch('/api/user/get-address', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: aktifKullanici.email })
-        });
+        const res = await fetch('/api/user/get-address', { method: 'POST' });
+        if (window.feyzayOturumKontrol(res)) return;
         const data = await res.json();
         if (data.success && data.address) saved = data.address;
     } catch (e) { }
@@ -224,14 +250,14 @@ window.editAddressModal = async function () {
     overlay.innerHTML = `
         <div class="feyzay-modal" style="background:#fff; padding:25px; border-radius:8px; width:90%; max-width:450px; box-shadow:0 10px 25px rgba(0,0,0,0.2); transform:translateY(-20px); transition:transform 0.3s ease;">
             <h3 style="margin-top:0;">Adres Bilgilerim</h3>
-            <div style="margin-bottom: 12px;"><label style="display:block; font-size:12px; margin-bottom:4px; color:#777;">Mahalle</label><input type="text" id="edit-mahalle" value="${parsedStreet.mahalle}" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;"></div>
-            <div style="margin-bottom: 12px;"><label style="display:block; font-size:12px; margin-bottom:4px; color:#777;">Cadde / Sokak</label><input type="text" id="edit-cadde" value="${parsedStreet.cadde}" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;"></div>
-            <div style="margin-bottom: 12px;"><label style="display:block; font-size:12px; margin-bottom:4px; color:#777;">Bina / Daire No</label><input type="text" id="edit-binano" value="${parsedStreet.binaNo}" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;"></div>
+            <div style="margin-bottom: 12px;"><label style="display:block; font-size:12px; margin-bottom:4px; color:#777;">Mahalle</label><input type="text" id="edit-mahalle" value="${feyzayEsc(parsedStreet.mahalle)}" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;"></div>
+            <div style="margin-bottom: 12px;"><label style="display:block; font-size:12px; margin-bottom:4px; color:#777;">Cadde / Sokak</label><input type="text" id="edit-cadde" value="${feyzayEsc(parsedStreet.cadde)}" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;"></div>
+            <div style="margin-bottom: 12px;"><label style="display:block; font-size:12px; margin-bottom:4px; color:#777;">Bina / Daire No</label><input type="text" id="edit-binano" value="${feyzayEsc(parsedStreet.binaNo)}" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;"></div>
             <div style="display:flex; gap:10px; margin-bottom:12px;">
-                <div style="flex:2;"><label style="display:block; font-size:12px; margin-bottom:4px; color:#777;">Şehir</label><input type="text" id="edit-city" value="${saved.city}" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;"></div>
-                <div style="flex:2;"><label style="display:block; font-size:12px; margin-bottom:4px; color:#777;">İlçe</label><input type="text" id="edit-district" value="${saved.district}" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;"></div>
+                <div style="flex:2;"><label style="display:block; font-size:12px; margin-bottom:4px; color:#777;">Şehir</label><input type="text" id="edit-city" value="${feyzayEsc(saved.city)}" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;"></div>
+                <div style="flex:2;"><label style="display:block; font-size:12px; margin-bottom:4px; color:#777;">İlçe</label><input type="text" id="edit-district" value="${feyzayEsc(saved.district)}" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;"></div>
             </div>
-            <div style="margin-bottom:20px;"><label style="display:block; font-size:12px; margin-bottom:4px; color:#777;">Posta Kodu</label><input type="number" id="edit-zipcode" value="${saved.zipcode}" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;"></div>
+            <div style="margin-bottom:20px;"><label style="display:block; font-size:12px; margin-bottom:4px; color:#777;">Posta Kodu</label><input type="number" id="edit-zipcode" value="${feyzayEsc(saved.zipcode)}" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;"></div>
             <div style="display:flex; justify-content:flex-end; gap:10px;">
                 <button id="edit-btn-cancel" style="padding:10px 15px; border:none; background:#eee; color:#333; border-radius:4px; cursor:pointer; font-weight:bold;">İptal Et</button>
                 <button id="edit-btn-save" style="padding:10px 15px; border:none; background:#111; color:#fff; border-radius:4px; cursor:pointer; font-weight:bold;">Kaydet</button>
@@ -273,8 +299,9 @@ window.editAddressModal = async function () {
             const response = await fetch('/api/user/address', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: aktifKullanici.email, city, district, street: combinedStreet, zipcode })
+                body: JSON.stringify({ city, district, street: combinedStreet, zipcode })
             });
+            if (window.feyzayOturumKontrol(response)) return;
             const result = await response.json();
 
             if (result.success) {
@@ -309,10 +336,10 @@ window.editProfileModal = function () {
         <div class="feyzay-modal" style="background:#fff; padding:25px; border-radius:8px; width:90%; max-width:450px; box-shadow:0 10px 25px rgba(0,0,0,0.2); transform:translateY(-20px); transition:transform 0.3s ease; max-height:90vh; overflow-y:auto;">
             <h3 style="margin-top:0;">Kullanıcı Bilgilerim</h3>
             <div style="display:flex; gap:10px; margin-bottom:12px;">
-                <div style="flex:1;"><label style="display:block; font-size:12px; margin-bottom:4px; color:#777;">İsim</label><input type="text" id="prof-firstname" value="${aktifKullanici.firstName || aktifKullanici.name || ''}" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;"></div>
-                <div style="flex:1;"><label style="display:block; font-size:12px; margin-bottom:4px; color:#777;">Soyisim</label><input type="text" id="prof-lastname" value="${aktifKullanici.lastName || ''}" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;"></div>
+                <div style="flex:1;"><label style="display:block; font-size:12px; margin-bottom:4px; color:#777;">İsim</label><input type="text" id="prof-firstname" value="${feyzayEsc(aktifKullanici.firstName || aktifKullanici.name || '')}" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;"></div>
+                <div style="flex:1;"><label style="display:block; font-size:12px; margin-bottom:4px; color:#777;">Soyisim</label><input type="text" id="prof-lastname" value="${feyzayEsc(aktifKullanici.lastName || '')}" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;"></div>
             </div>
-            <div style="margin-bottom:12px;"><label style="display:block; font-size:12px; margin-bottom:4px; color:#777;">E-posta</label><input type="email" id="prof-email" value="${aktifKullanici.email || ''}" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;"></div>
+            <div style="margin-bottom:12px;"><label style="display:block; font-size:12px; margin-bottom:4px; color:#777;">E-posta</label><input type="email" id="prof-email" value="${feyzayEsc(aktifKullanici.email || '')}" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;"></div>
             <div style="margin-top:20px; padding-top:15px; border-top:1px dashed #ddd;">
                 <h4 style="margin:0 0 10px 0; color:#555;">Şifre Değiştir</h4>
                 <div style="margin-bottom:12px;"><input type="password" id="prof-old-password" placeholder="Mevcut Şifre" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;"></div>
@@ -359,8 +386,9 @@ window.editProfileModal = function () {
             const res = await fetch('/api/user/update-profile', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ currentEmail: aktifKullanici.email, firstName, lastName, newEmail, oldPassword: oldPassword || null, newPassword: newPassword || null })
+                body: JSON.stringify({ firstName, lastName, newEmail, oldPassword: oldPassword || null, newPassword: newPassword || null })
             });
+            if (window.feyzayOturumKontrol(res)) return;
             const data = await res.json();
             if (data.success) {
                 localStorage.setItem('feyzay_user', JSON.stringify({ firstName: data.firstName, lastName: data.lastName, email: data.email }));
@@ -376,10 +404,6 @@ window.editProfileModal = function () {
 window.viewOrdersModal = async function () {
     const aktifKullanici = JSON.parse(localStorage.getItem('feyzay_user'));
     if (!aktifKullanici) return;
-
-    // Yarış durumu koruması: bu çağrıya özel bir istek numarası veriyoruz.
-    // Cevap geldiğinde hâlâ "en güncel" istek biz miyiz diye kontrol edeceğiz;
-    // değilsek (örn. modal kapatılıp tekrar açıldıysa) eski veriyi ekrana yazmayacağız.
     window._feyzayOrdersReqId = (window._feyzayOrdersReqId || 0) + 1;
     const buIstekNo = window._feyzayOrdersReqId;
     const buKullaniciEmail = aktifKullanici.email;
@@ -425,16 +449,10 @@ window.viewOrdersModal = async function () {
             allProducts = await prodRes.json();
         } catch (e) { }
 
-        const response = await fetch('/api/user/orders', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: aktifKullanici.email })
-        });
+        const response = await fetch('/api/user/orders', { method: 'POST' });
+        if (window.feyzayOturumKontrol(response)) return;
         const result = await response.json();
 
-        // Bu cevap gelene kadar başka bir "Siparişlerim" isteği başladıysa
-        // (ör. kullanıcı modalı kapatıp farklı bir hesapla tekrar açtıysa),
-        // bu artık geçersiz/eski bir cevaptır — ekranı güncelleme.
         if (buIstekNo !== window._feyzayOrdersReqId || buKullaniciEmail !== (JSON.parse(localStorage.getItem('feyzay_user')) || {}).email) {
             return;
         }
@@ -446,7 +464,7 @@ window.viewOrdersModal = async function () {
             let html = '';
             result.orders.forEach(order => {
                 let itemsHtml = order.cartData.map(item => {
-                    let imgSrc = 'img/no-image.jpg';
+                    let imgSrc = 'img/no-image.svg';
                     let product = allProducts.find(x => x.id === item.id);
                     if (product) {
                         if (product.colors && product.colors.length > 0) {
@@ -461,16 +479,14 @@ window.viewOrdersModal = async function () {
 
                     return `
                         <div style="display:flex; align-items:center; gap:12px; margin-top:10px; padding-top:10px; border-top:1px dashed #eee;">
-                            <img src="${imgSrc}" style="width:50px; height:65px; object-fit:cover; border-radius:4px; border:1px solid #ddd;">
+                            <img src="${feyzayEsc(imgSrc)}" style="width:50px; height:65px; object-fit:cover; border-radius:4px; border:1px solid #ddd;">
                             <div>
-                                <div style="font-weight:600; font-size:13px; margin-bottom:4px;">${item.name}</div>
-                                <div style="color:#777; font-size:12px;">${item.beden} ${item.renk ? ' | ' + item.renk : ''} | ${item.adet} Adet</div>
+                                <div style="font-weight:600; font-size:13px; margin-bottom:4px;">${feyzayEsc(item.name)}</div>
+                                <div style="color:#777; font-size:12px;">${feyzayEsc(item.beden)} ${item.renk ? ' | ' + feyzayEsc(item.renk) : ''} | ${feyzayEsc(item.adet)} Adet</div>
                             </div>
                         </div>
                     `;
                 }).join('');
-
-                // Her sipariş için statü alanına bir ID (live-cargo-ID) atıyoruz
                 html += `
                     <div style="padding:15px; border:1px solid #eee; border-radius:6px; margin-bottom:10px; font-size:14px; background:#fcfcfc;">
                         <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:5px;">
@@ -487,8 +503,6 @@ window.viewOrdersModal = async function () {
                 `;
             });
             container.innerHTML = html;
-
-            // HTML Ekrana Çizildikten Sonra Arka Planda API'ye Paralel Kargo İstekleri Atılır
             result.orders.forEach(async (order) => {
                 const statusSpan = document.getElementById(`live-cargo-${order.id}`);
                 if (statusSpan) {
@@ -501,8 +515,8 @@ window.viewOrdersModal = async function () {
                         const cData = await cRes.json();
 
                         if (cData.success && cData.durum) {
-                            let linkHtml = cData.takipNo ? `<a href="http://kargotakip.araskargo.com.tr/mainpage.aspx?code=${cData.takipNo}" target="_blank" style="color:#3498db; text-decoration:none; font-weight:bold; font-size:12px; margin-left:8px; border-left:1px solid #ddd; padding-left:8px;">Takip Ekranı ↗</a>` : '';
-                            statusSpan.innerHTML = `<span style="color:#2ecc71; font-weight:bold;">${cData.durum}</span> ${linkHtml}`;
+                            let linkHtml = cData.takipNo ? `<a href="http://kargotakip.araskargo.com.tr/mainpage.aspx?code=${encodeURIComponent(cData.takipNo)}" target="_blank" rel="noopener" style="color:#3498db; text-decoration:none; font-weight:bold; font-size:12px; margin-left:8px; border-left:1px solid #ddd; padding-left:8px;">Takip Ekranı ↗</a>` : '';
+                            statusSpan.innerHTML = `<span style="color:#2ecc71; font-weight:bold;">${feyzayEsc(cData.durum)}</span> ${linkHtml}`;
                         } else {
                             statusSpan.innerHTML = `<span style="color:#f39c12; font-weight:bold;">Hazırlanıyor / Şube Onayı Bekliyor</span>`;
                         }
@@ -647,7 +661,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             urunListesi.forEach(urun => {
-                let imgSource = 'img/no-image.jpg';
+                let imgSource = 'img/no-image.svg';
                 if (urun.colors && urun.colors.length > 0 && urun.colors[0].images && urun.colors[0].images.length > 0) {
                     imgSource = urun.colors[0].images[0];
                 } else if (urun.images && urun.images.length > 0) {
@@ -658,10 +672,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 let kart = document.createElement('div');
                 kart.className = 'product-card';
                 kart.innerHTML = `
-                    <div class="card-image" style="cursor:pointer;"><img src="${imgSource}" alt="${urun.name}"></div>
+                    <div class="card-image" style="cursor:pointer;"><img src="${feyzayEsc(imgSource)}" alt="${feyzayEsc(urun.name)}"></div>
                     <div class="card-details">
-                        <h3 class="product-title" style="cursor:pointer;">${urun.name}</h3>
-                        <p class="product-price">${urun.price.toFixed(2)} TL</p>
+                        <h3 class="product-title" style="cursor:pointer;">${feyzayEsc(urun.name)}</h3>
+                        <p class="product-price">${Number(urun.price).toFixed(2)} TL</p>
                         <button class="add-to-cart-btn">İncele</button>
                     </div>
                 `;
@@ -732,17 +746,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const nav = document.querySelector('.navigation');
-    const aktifKullanici = JSON.parse(localStorage.getItem('feyzay_user'));
-    if (aktifKullanici && nav) {
+    const kullanici = await window.feyzayKimlik;
+    if (kullanici && nav) {
         const authLink = Array.from(nav.querySelectorAll('a')).find(a => a.getAttribute('href') === 'kayit.html');
         if (authLink) {
             authLink.outerHTML = `
                 <div class="user-menu-container">
                     <a class="user-greeting" id="user-greeting-btn">Hesabım</a>
                     <div class="dropdown-content" id="user-dropdown">
-                        <p style="padding:10px 16px; margin:0; font-size:12px; color:#888;">Merhaba, ${aktifKullanici.name || aktifKullanici.firstName || 'Üye'}</p>
+                        <p style="padding:10px 16px; margin:0; font-size:12px; color:#888;">Merhaba, ${feyzayEsc(kullanici.firstName || 'Üye')}</p>
                         <a href="#" id="siparislerim-btn">Siparişlerim</a>
                         <a href="#" id="adres-duzenle-btn">Adres Bilgilerini Düzenle</a>
                         <a href="#" id="profil-duzenle-btn">Kullanıcı Bilgilerini Düzenle</a>
@@ -756,8 +770,10 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('siparislerim-btn').onclick = (e) => { e.preventDefault(); dropdown.classList.remove('goster'); window.viewOrdersModal(); };
             document.getElementById('adres-duzenle-btn').onclick = (e) => { e.preventDefault(); dropdown.classList.remove('goster'); window.editAddressModal(); };
             document.getElementById('profil-duzenle-btn').onclick = (e) => { e.preventDefault(); dropdown.classList.remove('goster'); window.editProfileModal(); };
-            document.getElementById('cikis-yap-btn').onclick = (e) => {
+            document.getElementById('cikis-yap-btn').onclick = async (e) => {
                 e.preventDefault();
+                // Oturum sunucuda da kapatılır; yalnızca tarayıcıyı temizlemek yetmez.
+                try { await fetch('/api/logout', { method: 'POST' }); } catch (err) { }
                 localStorage.removeItem('feyzay_user');
                 // Hesap değiştirildiğinde bir önceki kullanıcının sepeti yeni hesapta görünmesin diye sepeti de temizliyoruz.
                 localStorage.setItem('feyzay_sepet', JSON.stringify([]));
@@ -767,7 +783,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
     const btnLogin = document.getElementById('btn-login');
     const btnSignup = document.getElementById('btn-signup');
@@ -777,7 +793,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (btnLogin && btnSignup && loginForm && signupForm) {
 
-        if (localStorage.getItem('feyzay_user')) window.location.href = 'index.html';
+        if (await window.feyzayKimlik) window.location.href = 'index.html';
 
         btnLogin.onclick = () => {
             btnLogin.classList.add('active');
@@ -933,16 +949,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 toplamUrun += urun.adet; toplamFiyat += (urun.fiyat * urun.adet);
                 if (sepetIcerik) {
                     const ozellikMetni = [urun.beden || 'Standart', urun.renk].filter(Boolean).join(' - ');
+                    const beden = urun.beden || 'Standart';
+                    const renk = urun.renk || '';
                     sepetIcerik.innerHTML += `
                         <div class="sepet-item">
-                            <img src="${urun.resim}">
+                            <img src="${feyzayEsc(urun.resim)}">
                             <div class="sepet-item-detay">
-                                <h4>${urun.isim} (${ozellikMetni})</h4>
-                                <p>${urun.fiyat.toFixed(2)} TL</p>
+                                <h4>${feyzayEsc(urun.isim)} (${feyzayEsc(ozellikMetni)})</h4>
+                                <p>${Number(urun.fiyat).toFixed(2)} TL</p>
                                 <div class="adet-kontrol">
-                                    <button onclick="changeQtyInCart('${urun.id}', '${urun.beden || 'Standart'}', '${urun.renk || ''}', -1)">-</button>
-                                    <span>${urun.adet}</span>
-                                    <button onclick="changeQtyInCart('${urun.id}', '${urun.beden || 'Standart'}', '${urun.renk || ''}', 1)">+</button>
+                                    <button data-qty-action="-1" data-id="${feyzayEsc(urun.id)}" data-beden="${feyzayEsc(beden)}" data-renk="${feyzayEsc(renk)}">-</button>
+                                    <span>${feyzayEsc(urun.adet)}</span>
+                                    <button data-qty-action="1" data-id="${feyzayEsc(urun.id)}" data-beden="${feyzayEsc(beden)}" data-renk="${feyzayEsc(renk)}">+</button>
                                 </div>
                             </div>
                         </div>
@@ -964,6 +982,16 @@ document.addEventListener('DOMContentLoaded', () => {
             window.feyzay_sepetiGuncelle();
         }
     };
+
+    // Satır içi onclick yerine delege edilmiş dinleyici: ürün adı/beden/renk
+    // içindeki bir tırnak işareti artık HTML niteliğinden kaçamaz.
+    if (sepetIcerik) {
+        sepetIcerik.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-qty-action]');
+            if (!btn) return;
+            window.changeQtyInCart(btn.dataset.id, btn.dataset.beden, btn.dataset.renk, Number(btn.dataset.qtyAction));
+        });
+    }
 
     document.addEventListener('click', async (e) => {
         if (e.target.id === 'satin-al-btn' || e.target.classList.contains('satin-al-btn')) {

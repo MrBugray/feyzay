@@ -904,8 +904,8 @@
     <script>
         // =====================================================================
         // Bu panel yalnızca /api/admin/* uçlarını kullanır (server.js içinde
-        // tanımlı). Her istekte "x-admin-key" header'ı gönderilir; sunucu bunu
-        // .env dosyasındaki ADMIN_PASSWORD ile karşılaştırır.
+        // tanımlı). Yetki, giriş anında verilen bir oturum çereziyle taşınır;
+        // admin şifresi artık tarayıcıda saklanmaz ve her istekte gönderilmez.
         // =====================================================================
 
         // Site genelinde kullanılan kategori listesi (base.js ile aynı tutulmalı)
@@ -935,7 +935,6 @@
         ];
         const GENDER_TAGS = ['kadın', 'kız', 'erkek', 'unisex'];
 
-        let adminKey = localStorage.getItem('feyzay_admin_key') || '';
         let butunSiparisler = [];
         let butunUrunlerAdmin = [];
         let aktifSiparisTab = 'all';
@@ -949,22 +948,20 @@
             setTimeout(() => el.classList.remove('show'), 2600);
         }
 
+        // Müşteri ve ürün verileri innerHTML'e yazılmadan önce kaçırılır. Aksi hâlde
+        // sipariş sırasında girilen bir script, siparişleri görüntüleyen yöneticinin
+        // tarayıcısında çalışıyordu.
+        function esc(value) {
+            return String(value ?? '').replace(/[&<>"']/g, ch => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[ch]);
+        }
+
         async function adminFetch(url, options = {}) {
-            const res = await fetch(url, {
-                ...options,
-                headers: {
-                    ...(options.headers || {}),
-                    'x-admin-key': adminKey
-                }
-            });
+            const res = await fetch(url, options);
             if (res.status === 401 || res.status === 503) {
                 const data = await res.json().catch(() => ({}));
-                if (res.status === 401) {
-                    localStorage.removeItem('feyzay_admin_key');
-                    showLogin(data.message || 'Oturum sona erdi, tekrar giriş yapın.');
-                } else {
-                    showLogin(data.message || 'Admin paneli aktif değil.');
-                }
+                showLogin(data.message || (res.status === 401 ? 'Oturum sona erdi, tekrar giriş yapın.' : 'Admin paneli aktif değil.'));
                 throw new Error(data.message || 'Yetkisiz');
             }
             return res;
@@ -1004,8 +1001,7 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    adminKey = pw;
-                    localStorage.setItem('feyzay_admin_key', pw);
+                    document.getElementById('adm-login-password').value = '';
                     showApp();
                 } else {
                     document.getElementById('adm-login-error').textContent = data.message || 'Şifre hatalı.';
@@ -1021,9 +1017,8 @@
         }
         document.getElementById('adm-login-btn').onclick = girisYap;
         document.getElementById('adm-login-password').addEventListener('keydown', (e) => { if (e.key === 'Enter') girisYap(); });
-        document.getElementById('adm-logout-btn').onclick = () => {
-            localStorage.removeItem('feyzay_admin_key');
-            adminKey = '';
+        document.getElementById('adm-logout-btn').onclick = async () => {
+            try { await fetch('/api/admin/logout', { method: 'POST' }); } catch (e) { }
             showLogin();
         };
 
@@ -1056,14 +1051,14 @@
         // Sipariş fotoğraflarını getirecek yardımcı fonksiyon
         function siparisUrunGorsel(id, renk) {
             const urun = butunUrunlerAdmin.find(u => u.id === id);
-            if (!urun) return 'img/no-image.jpg';
+            if (!urun) return 'img/no-image.svg';
             if (renk && urun.colors && urun.colors.length > 0) {
                 const c = urun.colors.find(color => color.name === renk);
                 if (c && c.images && c.images.length > 0) return c.images[0];
             }
             if (urun.images && urun.images.length > 0) return urun.images[0];
             if (urun.image) return urun.image;
-            return 'img/no-image.jpg';
+            return 'img/no-image.svg';
         }
 
         function siparisleriCiz() {
@@ -1091,10 +1086,10 @@
                     const imgSrc = siparisUrunGorsel(item.id, item.renk);
                     return `
                     <div class="adm-item-row" style="display: flex; align-items: center; gap: 15px;">
-                        <img src="${imgSrc}" style="width: 75px; height: 100px; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                        <img src="${esc(imgSrc)}" style="width: 75px; height: 100px; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
                         <div>
-                            <strong style="font-size: 14.5px;">${item.name}</strong> × ${item.adet}
-                            <div class="adm-item-meta" style="margin-top: 4px;">${[item.beden, item.renk].filter(Boolean).join(' · ')} · ID: ${item.id}</div>
+                            <strong style="font-size: 14.5px;">${esc(item.name)}</strong> × ${esc(item.adet)}
+                            <div class="adm-item-meta" style="margin-top: 4px;">${esc([item.beden, item.renk].filter(Boolean).join(' · '))} · ID: ${esc(item.id)}</div>
                         </div>
                     </div>
                     `;
@@ -1106,7 +1101,11 @@
 
                 const kargoAlani = o.cargoState === 1
                     ? `
-                        <p style="font-size:13px; margin-top:4px;">Takip Kodu: <strong>${o.cargoTrackingCode}</strong></p>
+                        <p style="font-size:13px; margin-top:4px;">Takip Kodu: <strong>${esc(o.cargoTrackingCode)}</strong></p>
+                    `
+                    : o.arasError
+                    ? `
+                        <p style="font-size:13px; margin-top:4px; color:#c0392b;">Kargoya iletilemedi: ${esc(o.arasError)}</p>
                     `
                     : `
                         <p style="font-size:13px; margin-top:4px; color:var(--muted);">Kargo takip numarası sistem tarafından otomatik oluşturulacaktır.</p>
@@ -1124,7 +1123,7 @@
                         <div class="adm-order-body">
                             <div class="adm-order-col">
                                 <h4>Müşteri</h4>
-                                <p>${o.firstName} ${o.lastName}<br>${o.email || '—'}</p>
+                                <p>${esc(o.firstName)} ${esc(o.lastName)}<br>${esc(o.email) || '—'}</p>
                             </div>
                             <div class="adm-order-col">
                                 <h4>Ürünler</h4>
@@ -1132,7 +1131,7 @@
                             </div>
                             <div class="adm-order-col">
                                 <h4>Teslimat Adresi</h4>
-                                <p>${o.street || ''}<br>${o.district || ''} / ${o.city || ''}<br>${o.zipcode || ''}</p>
+                                <p>${esc(o.street)}<br>${esc(o.district)} / ${esc(o.city)}<br>${esc(o.zipcode)}</p>
                                 ${kargoAlani}
                             </div>
                         </div>
@@ -1216,20 +1215,29 @@
             }
             grid.innerHTML = liste.map(u => `
                 <div class="adm-product-card">
-                    <img class="adm-product-img" src="${urunGorsel(u)}" alt="${u.name}" onerror="this.style.opacity=0">
+                    <img class="adm-product-img" src="${esc(urunGorsel(u))}" alt="${esc(u.name)}" onerror="this.style.opacity=0">
                     <div class="adm-product-body">
-                        <div class="adm-product-name">${u.name}</div>
-                        <div class="adm-product-id">ID: ${u.id} · Stok: ${urunStokToplam(u)}</div>
+                        <div class="adm-product-name">${esc(u.name)}</div>
+                        <div class="adm-product-id">ID: ${esc(u.id)} · Stok: ${esc(urunStokToplam(u))}</div>
                         <div class="adm-product-price">${Number(u.price).toFixed(2)} TL</div>
-                        <div class="adm-product-tags">${(u.tags || []).slice(0, 4).map(t => `<span class="adm-chip">${t}</span>`).join('')}</div>
+                        <div class="adm-product-tags">${(u.tags || []).slice(0, 4).map(t => `<span class="adm-chip">${esc(t)}</span>`).join('')}</div>
                         <div class="adm-product-actions">
-                            <button onclick="urunDuzenle('${u.id}')">Düzenle</button>
-                            <button class="danger" onclick="urunSil('${u.id}')">Sil</button>
+                            <button data-action="edit" data-id="${esc(u.id)}">Düzenle</button>
+                            <button class="danger" data-action="delete" data-id="${esc(u.id)}">Sil</button>
                         </div>
                     </div>
                 </div>
             `).join('');
         }
+
+        // Satır içi onclick yerine delege edilmiş dinleyici: ürün ID'sindeki bir
+        // tırnak işareti artık HTML/JS bağlamından kaçamaz.
+        document.getElementById('adm-products-grid').addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-action]');
+            if (!btn) return;
+            if (btn.dataset.action === 'edit') urunDuzenle(btn.dataset.id);
+            else if (btn.dataset.action === 'delete') urunSil(btn.dataset.id);
+        });
 
         document.getElementById('adm-product-search').addEventListener('input', urunleriCiz);
 
@@ -1432,11 +1440,17 @@
         });
 
         // ---------- Başlangıç ----------
-        if (adminKey) {
-            showApp();
-        } else {
-            showLogin();
-        }
+        // Panelin açılıp açılmayacağına yalnızca sunucudaki oturum karar verir.
+        (async () => {
+            try {
+                const res = await fetch('/api/me');
+                const data = await res.json();
+                if (data.isAdmin) showApp();
+                else showLogin();
+            } catch (e) {
+                showLogin();
+            }
+        })();
     </script>
 </body>
 

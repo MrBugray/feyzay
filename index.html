@@ -614,22 +614,6 @@
     </footer>
 
     <script src="base.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const params = new URLSearchParams(window.location.search);
-            const searchQuery = params.get('search');
-
-            if (searchQuery) {
-                const searchInput = document.getElementById('product-search-input');
-                if (searchInput) {
-                    searchInput.value = searchQuery;
-                    setTimeout(() => {
-                        searchInput.dispatchEvent(new Event('input'));
-                    }, 300);
-                }
-            }
-        });
-    </script>
 </body>
 
 </html>
