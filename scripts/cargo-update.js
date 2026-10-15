@@ -2,7 +2,7 @@ const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 const readline = require('readline');
 
-const db = new sqlite3.Database(path.join(__dirname, 'database.sqlite'), (err) => {
+const db = new sqlite3.Database(path.join(__dirname, '..', 'data', 'database.sqlite'), (err) => {
     if (err) process.exit(1);
 });
 

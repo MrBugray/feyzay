@@ -1051,14 +1051,14 @@
         // Sipariş fotoğraflarını getirecek yardımcı fonksiyon
         function siparisUrunGorsel(id, renk) {
             const urun = butunUrunlerAdmin.find(u => u.id === id);
-            if (!urun) return 'img/no-image.svg';
+            if (!urun) return 'assets/img/no-image.svg';
             if (renk && urun.colors && urun.colors.length > 0) {
                 const c = urun.colors.find(color => color.name === renk);
                 if (c && c.images && c.images.length > 0) return c.images[0];
             }
             if (urun.images && urun.images.length > 0) return urun.images[0];
             if (urun.image) return urun.image;
-            return 'img/no-image.svg';
+            return 'assets/img/no-image.svg';
         }
 
         function siparisleriCiz() {

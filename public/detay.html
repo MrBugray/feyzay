@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ürün Detayı - Feyzay</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="assets/css/style.css">
     <style>
         /* ============ DARK MODE & HEADER (Siyah Tema) ============ */
         body {
@@ -966,7 +966,7 @@
         <p class="pdp-skeleton">Ürün yükleniyor...</p>
     </div>
 
-    <script src="base.js"></script>
+    <script src="assets/js/base.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             const urlParams = new URLSearchParams(window.location.search);
@@ -1000,7 +1000,7 @@
 
             let images = colorList
                 ? currentColor().images
-                : ((urun.images && urun.images.length > 0) ? urun.images : [urun.image || 'img/no-image.svg']);
+                : ((urun.images && urun.images.length > 0) ? urun.images : [urun.image || 'assets/img/no-image.svg']);
 
             const anaTag = (urun.tags && urun.tags.length > 0) ? urun.tags[0] : null;
             let currentStock = colorList ? currentColor().stock : urun.stock;
@@ -1014,7 +1014,7 @@
             // MİNİ FOTOĞRAFLI RENK SEÇİMİ ENTEGRASYONU
             const colorsHtml = colorList
                 ? colorList.map((c, idx) => {
-                    const thumbImg = (c.images && c.images.length > 0) ? c.images[0] : 'img/no-image.svg';
+                    const thumbImg = (c.images && c.images.length > 0) ? c.images[0] : 'assets/img/no-image.svg';
                     return `
                         <button class="pdp-color-swatch ${idx === 0 ? 'active' : ''}" data-idx="${idx}" title="${c.name}" aria-label="${c.name}">
                             <img src="${thumbImg}" alt="${c.name}">
