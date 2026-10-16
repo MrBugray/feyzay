@@ -22,7 +22,17 @@ app.use(cors({
 app.use(oturumYukleyici);
 
 // Yalnızca public/ dizini statik sunulur; src/, data/, scripts/ asla dışarı açılmaz.
-app.use(express.static(config.PUBLIC_DIR, { dotfiles: 'deny', index: false }));
+// HTML/JS/CSS için no-cache: tarayıcı her yüklemede yeniden doğrular (ETag ile ucuzdur),
+// böylece panel/site güncellemeleri kullanıcıya eski dosyayla gitmez.
+app.use(express.static(config.PUBLIC_DIR, {
+    dotfiles: 'deny',
+    index: false,
+    setHeaders: (res, yol) => {
+        if (/\.(html|js|css)$/i.test(yol)) {
+            res.setHeader('Cache-Control', 'no-cache');
+        }
+    }
+}));
 
 // Ürün kataloğu istemciler tarafından bu adresten okunur.
 app.get('/products.json', (req, res) => {
@@ -35,6 +45,7 @@ app.use(adminRoutes);
 app.use(shipmentRoutes);
 
 app.get('/', (req, res) => {
+    res.setHeader('Cache-Control', 'no-cache');
     res.sendFile(path.join(config.PUBLIC_DIR, 'index.html'));
 });
 

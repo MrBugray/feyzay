@@ -3,7 +3,9 @@ const crypto = require('crypto');
 const { db } = require('../db');
 
 const OTURUM_COOKIE = 'feyzay_sid';
-const OTURUM_SURESI_MS = 1000 * 60 * 60 * 24 * 30;
+// Kullanıcı oturumları 30 gün, admin oturumları 8 saat sonra kendiliğinden düşer.
+const OTURUM_SURESI_KULLANICI_MS = 1000 * 60 * 60 * 24 * 30;
+const OTURUM_SURESI_ADMIN_MS = 1000 * 60 * 60 * 8;
 
 function cerezOku(req, ad) {
     const ham = req.headers.cookie;
@@ -23,11 +25,12 @@ function cerezYaz(res, sid, maxAgeSn) {
 
 function oturumOlustur(res, userId, isAdmin, cb) {
     const sid = crypto.randomBytes(32).toString('base64url');
-    const son = Date.now() + OTURUM_SURESI_MS;
+    const sureMs = isAdmin ? OTURUM_SURESI_ADMIN_MS : OTURUM_SURESI_KULLANICI_MS;
+    const son = Date.now() + sureMs;
     db.run(`INSERT INTO sessions (sid, user_id, is_admin, expires_at) VALUES (?, ?, ?, ?)`,
         [sid, userId, isAdmin ? 1 : 0, son], (err) => {
             if (err) return cb(err);
-            cerezYaz(res, sid, Math.floor(OTURUM_SURESI_MS / 1000));
+            cerezYaz(res, sid, Math.floor(sureMs / 1000));
             cb(null);
         });
 }
