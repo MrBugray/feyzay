@@ -487,6 +487,24 @@ window.viewOrdersModal = async function () {
                         </div>
                     `;
                 }).join('');
+                if (order.cancelReason) {
+                    html += `
+                    <div style="padding:15px; border:1px solid #f5c6c6; border-radius:6px; margin-bottom:10px; font-size:14px; background:#fdf3f3;">
+                        <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:5px;">
+                            <span>Sipariş: #${order.id}</span>
+                            <span>${new Date(order.createdAt).toLocaleDateString('tr-TR')}</span>
+                        </div>
+                        <div style="margin-bottom:10px; font-size:13px; background:#fff; padding:8px 12px; border:1px solid #f5c6c6; border-radius:4px;">
+                            <strong style="color:#e74c3c;">Sipariş İptal Edildi.</strong>
+                            <span style="color:#555;">Nedeni: ${feyzayEsc(order.cancelReason)}</span>
+                        </div>
+                        <div style="background:#fff; padding:10px; border-radius:4px; border:1px solid #f0e5e5;">
+                            ${itemsHtml}
+                        </div>
+                    </div>
+                `;
+                    return;
+                }
                 html += `
                     <div style="padding:15px; border:1px solid #eee; border-radius:6px; margin-bottom:10px; font-size:14px; background:#fcfcfc;">
                         <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:5px;">

@@ -8,6 +8,7 @@ const { oturumYukleyici } = require('./middleware/session');
 const authRoutes = require('./routes/auth');
 const orderRoutes = require('./routes/orders');
 const adminRoutes = require('./routes/admin');
+const shipmentRoutes = require('./routes/shipments');
 
 const app = express();
 app.use(express.json());
@@ -31,6 +32,7 @@ app.get('/products.json', (req, res) => {
 app.use(authRoutes);
 app.use(orderRoutes);
 app.use(adminRoutes);
+app.use(shipmentRoutes);
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(config.PUBLIC_DIR, 'index.html'));

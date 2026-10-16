@@ -84,6 +84,8 @@ db.serialize(() => {
 
     db.run(`ALTER TABLE order_items ADD COLUMN renk TEXT`, () => { });
     db.run(`ALTER TABLE orders ADD COLUMN phone TEXT`, () => { });
+    db.run(`ALTER TABLE orders ADD COLUMN cancel_reason TEXT`, () => { });
+    db.run(`ALTER TABLE orders ADD COLUMN approval_state INTEGER DEFAULT 0`, () => { });
 });
 
 module.exports = { db, dbGet };

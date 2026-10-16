@@ -8,7 +8,7 @@ const { encryptData, decryptData, hashPassword, verifyPassword } = require('../l
 const { sendMail } = require('../lib/mailer');
 const { katalogUrun, stokYeterliMi } = require('../lib/catalog');
 const { kullaniciGerekli } = require('../middleware/session');
-const { xmlKacis, cdataKacis, sendToArasKargo } = require('../services/arasKargo');
+const { xmlKacis, cdataKacis } = require('../services/arasKargo');
 
 const router = express.Router();
 
@@ -292,28 +292,10 @@ router.post('/api/paytr-callback', (req, res) => {
                 }
                 console.log(`[PAYTR] Sipariş #${order.id} ödendi olarak işaretlendi.`);
 
-                // 1. Müşteri bilgilerini çöz
+                // Sipariş Onay Mailini Gönder. Kargo entegrasyonu artık burada yapılmıyor;
+                // sipariş önce admin onayından geçer (bkz. Kargo Yönetimi sekmesi).
                 const musteriMaili = decryptData(order.email);
                 const musteriAdi = decryptData(order.first_name);
-
-                const orderObj = {
-                    firstName: musteriAdi,
-                    lastName: decryptData(order.last_name),
-                    phone: decryptData(order.phone) || '05555555555',
-                    addressObj: {
-                        city: decryptData(order.city),
-                        district: decryptData(order.district),
-                        street: decryptData(order.street)
-                    },
-                    cart: []
-                };
-
-                // 2. Aras Kargo'ya Gönder
-                sendToArasKargo(order.id, orderObj).then(() => {
-                    console.log(`[PAYTR] Sipariş #${order.id} ödendi ve kargoya iletildi.`);
-                });
-
-                // 3. Sipariş Onay Mailini Gönder
                 const siparisMaili = `
                     <div style="font-family: sans-serif; color: #111; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
                         <h2 style="color: #2ecc71;">Siparişiniz Alındı!</h2>
@@ -449,6 +431,7 @@ router.post('/api/user/orders', kullaniciGerekli, (req, res) => {
                     district: decryptData(row.district),
                     cargoState: row.cargo_state,
                     cargoTrackingCode: row.cargo_tracking_code,
+                    cancelReason: row.cancel_reason || null,
                     createdAt: row.created_at,
                     cartData: []
                 };

@@ -271,6 +271,32 @@
             gap: 8px;
             margin-bottom: 22px;
             flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .adm-tab-pair {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .adm-tab-xls {
+            border: 1.5px solid var(--line);
+            background: #fff;
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            font-size: 13px;
+            line-height: 1;
+            cursor: pointer;
+            color: #555;
+            flex-shrink: 0;
+        }
+
+        .adm-tab-xls:hover {
+            background: var(--ink);
+            color: #fff;
+            border-color: var(--ink);
         }
 
         .adm-tab {
@@ -358,6 +384,24 @@
 
         .adm-badge.wait .dot {
             background: #e8ab2f;
+        }
+
+        .adm-badge.bad {
+            color: #c0392b;
+            background: #fdecea;
+        }
+
+        .adm-badge.bad .dot {
+            background: #e74c3c;
+        }
+
+        .adm-badge.info {
+            color: #1a56db;
+            background: #e3edfd;
+        }
+
+        .adm-badge.info .dot {
+            background: #3b82f6;
         }
 
         .adm-order-body {
@@ -763,7 +807,7 @@
             <div class="adm-brand">FEYZAY</div>
             <div class="adm-brand-sub">ADMIN PANELİ</div>
 
-            <button class="adm-nav-btn active" data-view="orders">Siparişler</button>
+            <button class="adm-nav-btn active" data-view="shipments">Kargo Yönetimi</button>
             <button class="adm-nav-btn" data-view="products">Ürünler</button>
 
             <div class="adm-nav-footer">
@@ -773,29 +817,6 @@
         </aside>
 
         <main class="adm-main">
-
-            <!-- ================= SİPARİŞLER ================= -->
-            <section class="adm-view active" id="adm-view-orders">
-                <div class="adm-view-header">
-                    <h2>Siparişler</h2>
-                    <div class="adm-toolbar">
-                        <input type="text" class="adm-input" id="adm-order-search"
-                            placeholder="Sipariş no, isim veya e-posta ara...">
-                        <button class="adm-btn adm-btn-outline" id="adm-refresh-orders">Yenile</button>
-                        <button class="adm-btn" id="adm-export-btn">⬇ Excel İndir</button>
-                    </div>
-                </div>
-
-                <div class="adm-tabs">
-                    <button class="adm-tab active" data-status="all">Tümü</button>
-                    <button class="adm-tab" data-status="waiting">Hazırlanıyor</button>
-                    <button class="adm-tab" data-status="shipped">Kargoda</button>
-                </div>
-
-                <div class="adm-orders-list" id="adm-orders-list">
-                    <p class="adm-empty">Yükleniyor...</p>
-                </div>
-            </section>
 
             <!-- ================= ÜRÜNLER ================= -->
             <section class="adm-view" id="adm-view-products">
@@ -809,6 +830,41 @@
                 </div>
 
                 <div class="adm-products-grid" id="adm-products-grid">
+                    <p class="adm-empty">Yükleniyor...</p>
+                </div>
+            </section>
+
+            <!-- ================= KARGO YÖNETİMİ ================= -->
+            <section class="adm-view active" id="adm-view-shipments">
+                <div class="adm-view-header">
+                    <h2>Kargo Yönetimi</h2>
+                    <div class="adm-toolbar">
+                        <input type="text" class="adm-input" id="adm-shipment-search"
+                            placeholder="Sipariş no, isim veya şehir ara...">
+                        <button class="adm-btn adm-btn-outline" id="adm-refresh-shipments">Yenile</button>
+                    </div>
+                </div>
+
+                <div class="adm-tabs">
+                    <span class="adm-tab-pair">
+                        <button class="adm-tab active" data-shipment-filter="all">Tümü</button>
+                        <button class="adm-tab-xls" data-xls="all" title="Tümünü Excel olarak indir">⬇</button>
+                    </span>
+                    <span class="adm-tab-pair">
+                        <button class="adm-tab" data-shipment-filter="approval">Onay Bekliyor</button>
+                        <button class="adm-tab-xls" data-xls="approval" title="Onay Bekleyenleri Excel olarak indir">⬇</button>
+                    </span>
+                    <span class="adm-tab-pair">
+                        <button class="adm-tab" data-shipment-filter="courier">Kurye Bekleniyor</button>
+                        <button class="adm-tab-xls" data-xls="courier" title="Kurye Beklenenleri Excel olarak indir">⬇</button>
+                    </span>
+                    <span class="adm-tab-pair">
+                        <button class="adm-tab" data-shipment-filter="transit">Kargoda</button>
+                        <button class="adm-tab-xls" data-xls="transit" title="Kargodakileri Excel olarak indir">⬇</button>
+                    </span>
+                </div>
+
+                <div class="adm-orders-list" id="adm-shipments-list">
                     <p class="adm-empty">Yükleniyor...</p>
                 </div>
             </section>
@@ -935,9 +991,7 @@
         ];
         const GENDER_TAGS = ['kadın', 'kız', 'erkek', 'unisex'];
 
-        let butunSiparisler = [];
         let butunUrunlerAdmin = [];
-        let aktifSiparisTab = 'all';
         let editingProductId = null; // null => yeni ürün ekleniyor
 
         // ---------- Yardımcılar ----------
@@ -982,8 +1036,8 @@
         function showApp() {
             document.getElementById('adm-login-screen').style.display = 'none';
             document.getElementById('adm-app').classList.add('active');
-            yukleSiparisler();
             yukleUrunler();
+            yukleKargolar();
         }
 
         // ---------- Giriş ----------
@@ -1034,105 +1088,98 @@
         });
 
         // =====================================================================
-        // ============================ SİPARİŞLER ============================
+        // ========================== KARGO YÖNETİMİ ==========================
         // =====================================================================
-        async function yukleSiparisler() {
-            const list = document.getElementById('adm-orders-list');
+        let butunKargolar = [];
+        let aktifKargoFiltre = 'all';
+        const arasDurumCache = {}; // orderId -> { durum, takipNo, zaman }
+
+        async function yukleKargolar() {
+            const list = document.getElementById('adm-shipments-list');
             try {
-                const res = await adminFetch('/api/admin/orders');
+                const res = await adminFetch('/api/admin/shipments');
                 const data = await res.json();
-                butunSiparisler = data.orders || [];
-                siparisleriCiz();
+                butunKargolar = data.shipments || [];
+                kargolariCiz();
             } catch (e) {
-                if (list) list.innerHTML = '<p class="adm-empty">Siparişler yüklenemedi.</p>';
+                if (list) list.innerHTML = '<p class="adm-empty">Kargolar yüklenemedi.</p>';
             }
         }
 
-        // Sipariş fotoğraflarını getirecek yardımcı fonksiyon
-        function siparisUrunGorsel(id, renk) {
-            const urun = butunUrunlerAdmin.find(u => u.id === id);
-            if (!urun) return 'assets/img/no-image.svg';
-            if (renk && urun.colors && urun.colors.length > 0) {
-                const c = urun.colors.find(color => color.name === renk);
-                if (c && c.images && c.images.length > 0) return c.images[0];
-            }
-            if (urun.images && urun.images.length > 0) return urun.images[0];
-            if (urun.image) return urun.image;
-            return 'assets/img/no-image.svg';
-        }
+        function kargolariCiz() {
+            const list = document.getElementById('adm-shipments-list');
+            const arama = document.getElementById('adm-shipment-search').value.toLowerCase().trim();
 
-        function siparisleriCiz() {
-            const list = document.getElementById('adm-orders-list');
-            const arama = document.getElementById('adm-order-search').value.toLowerCase().trim();
-
-            let gosterilecek = butunSiparisler.filter(o => {
-                if (aktifSiparisTab === 'waiting' && o.cargoState === 1) return false;
-                if (aktifSiparisTab === 'shipped' && o.cargoState !== 1) return false;
+            let gosterilecek = butunKargolar.filter(s => {
+                if (aktifKargoFiltre === 'approval' && !(s.approvalState === 0 && !s.cancelReason)) return false;
+                if (aktifKargoFiltre === 'courier' && !(s.approvalState === 1 && s.cargoState !== 1 && !s.cancelReason)) return false;
+                if (aktifKargoFiltre === 'transit' && s.cargoState !== 1) return false;
                 if (arama) {
-                    const hedef = `${o.id} ${o.firstName} ${o.lastName} ${o.email}`.toLowerCase();
+                    const hedef = `${s.id} ${s.firstName} ${s.lastName} ${s.city} ${s.district} ${s.cargoTrackingCode || ''}`.toLowerCase();
                     if (!hedef.includes(arama)) return false;
                 }
                 return true;
             });
 
             if (gosterilecek.length === 0) {
-                list.innerHTML = '<p class="adm-empty">Bu kritere uygun sipariş bulunamadı.</p>';
+                list.innerHTML = '<p class="adm-empty">Bu kritere uygun kargo bulunamadı.</p>';
                 return;
             }
 
-            list.innerHTML = gosterilecek.map(o => {
-                const tarih = new Date(o.createdAt).toLocaleString('tr-TR');
-                const urunlerHtml = (o.cartData || []).map(item => {
-                    const imgSrc = siparisUrunGorsel(item.id, item.renk);
-                    return `
-                    <div class="adm-item-row" style="display: flex; align-items: center; gap: 15px;">
-                        <img src="${esc(imgSrc)}" style="width: 75px; height: 100px; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                        <div>
-                            <strong style="font-size: 14.5px;">${esc(item.name)}</strong> × ${esc(item.adet)}
-                            <div class="adm-item-meta" style="margin-top: 4px;">${esc([item.beden, item.renk].filter(Boolean).join(' · '))} · ID: ${esc(item.id)}</div>
-                        </div>
-                    </div>
-                    `;
-                }).join('') || '<p class="adm-item-meta">Ürün bilgisi yok.</p>';
-
-                const kargoBadge = o.cargoState === 1
-                    ? `<span class="adm-badge good"><span class="dot"></span>Kargoya Verildi</span>`
-                    : `<span class="adm-badge wait"><span class="dot"></span>Hazırlanıyor</span>`;
-
-                const kargoAlani = o.cargoState === 1
-                    ? `
-                        <p style="font-size:13px; margin-top:4px;">Takip Kodu: <strong>${esc(o.cargoTrackingCode)}</strong></p>
-                    `
-                    : o.arasError
-                    ? `
-                        <p style="font-size:13px; margin-top:4px; color:#c0392b;">Kargoya iletilemedi: ${esc(o.arasError)}</p>
-                    `
-                    : `
-                        <p style="font-size:13px; margin-top:4px; color:var(--muted);">Kargo takip numarası sistem tarafından otomatik oluşturulacaktır.</p>
-                    `;
-
+            list.innerHTML = gosterilecek.map(s => {
+                const tarih = new Date(s.createdAt).toLocaleString('tr-TR');
+                const cache = arasDurumCache[s.id];
+                const kargoBadge = s.cancelReason
+                    ? `<span class="adm-badge bad"><span class="dot"></span>İptal Edildi</span>`
+                    : s.cargoState === 1
+                    ? `<span class="adm-badge good"><span class="dot"></span>Kargoda</span>`
+                    : s.approvalState === 1
+                    ? `<span class="adm-badge wait"><span class="dot"></span>Kurye Bekleniyor</span>`
+                    : `<span class="adm-badge info"><span class="dot"></span>Onay Bekliyor</span>`;
+                const takip = (cache && cache.takipNo) || s.cargoTrackingCode || '—';
+                const durumHtml = s.cancelReason
+                    ? `<p style="font-size:13px; margin-top:4px; color:#c0392b;">İptal edildi: ${esc(s.cancelReason)}</p>`
+                    : cache && cache.durum
+                    ? `<p style="font-size:13px; margin-top:4px;">Aras Durumu: <strong>${esc(cache.durum)}</strong>${cache.teslimTarihi ? `<br>Teslim: ${esc(cache.teslimTarihi)}` : ''}</p>`
+                    : s.arasError
+                    ? `<p style="font-size:13px; margin-top:4px; color:#c0392b;">Aras Hatası: ${esc(s.arasError)}</p>`
+                    : '';
+                const onayBtn = (s.approvalState === 0 && !s.cancelReason)
+                    ? `<button class="adm-btn kargo-btn" data-kargo-action="approve" data-id="${s.id}">Onayla ve Kargoya Gönder</button>`
+                    : '';
+                const tekrarBtn = (s.approvalState === 1 && s.cargoState !== 1 && !s.cancelReason)
+                    ? `<button class="adm-btn adm-btn-outline kargo-btn" data-kargo-action="send" data-id="${s.id}">Tekrar Gönder</button>`
+                    : '';
+                const iptalBtn = s.cancelReason
+                    ? ''
+                    : `<button class="adm-btn adm-btn-outline kargo-btn" data-kargo-action="cancel" data-id="${s.id}">İptal Et</button>`;
                 return `
-                    <div class="adm-order-card">
+                    <div class="adm-order-card" id="kargo-card-${s.id}">
                         <div class="adm-order-top">
                             <div>
-                                <div class="adm-order-id">Sipariş #${o.id}</div>
+                                <div class="adm-order-id">Sipariş #${s.id}</div>
                                 <div class="adm-order-date">${tarih}</div>
                             </div>
                             ${kargoBadge}
                         </div>
                         <div class="adm-order-body">
                             <div class="adm-order-col">
-                                <h4>Müşteri</h4>
-                                <p>${esc(o.firstName)} ${esc(o.lastName)}<br>${esc(o.email) || '—'}</p>
+                                <h4>Alıcı</h4>
+                                <p>${esc(s.firstName)} ${esc(s.lastName)}<br>${esc(s.district)} / ${esc(s.city)}</p>
                             </div>
                             <div class="adm-order-col">
-                                <h4>Ürünler</h4>
-                                ${urunlerHtml}
+                                <h4>Takip Numarası</h4>
+                                <p><strong>${esc(takip)}</strong></p>
+                                ${durumHtml}
                             </div>
                             <div class="adm-order-col">
-                                <h4>Teslimat Adresi</h4>
-                                <p>${esc(o.street)}<br>${esc(o.district)} / ${esc(o.city)}<br>${esc(o.zipcode)}</p>
-                                ${kargoAlani}
+                                <h4>İşlemler</h4>
+                                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                                    <button class="adm-btn adm-btn-outline kargo-btn" data-kargo-action="status" data-id="${s.id}">Durum Sorgula</button>
+                                    ${onayBtn}
+                                    ${tekrarBtn}
+                                    ${iptalBtn}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1140,28 +1187,131 @@
             }).join('');
         }
 
-        document.getElementById('adm-order-search').addEventListener('input', siparisleriCiz);
-        document.getElementById('adm-refresh-orders').onclick = yukleSiparisler;
-        document.querySelectorAll('.adm-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.adm-tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                aktifSiparisTab = tab.dataset.status;
-                siparisleriCiz();
-            });
+        async function kargoDurumSorgula(id, btn) {
+            if (btn) { btn.disabled = true; btn.textContent = 'Sorgulanıyor...'; }
+            try {
+                const res = await adminFetch(`/api/admin/shipments/${id}/status`, { method: 'POST' });
+                const data = await res.json();
+                if (!data.success) {
+                    toast(data.message || 'Durum sorgulanamadı.', 'error');
+                    return;
+                }
+                if (data.cargo) {
+                    const cargo = data.cargo;
+                    const durumu = cargo.DURUMU || cargo['DURUM KODU'] || cargo.DURUM_KODU || '';
+                    const takipNo = cargo.KARGO_TAKIP_NO || cargo['KARGO TAKIP NO'] || '';
+                    const teslim = cargo.TESLİM_TARİHİ || cargo['TESLİM TARİHİ'] || '';
+                    arasDurumCache[id] = { durum: durumu, takipNo, teslimTarihi: teslim };
+                    toast(`Sipariş #${id}: ${durumu || 'durum alındı'}${data.transitioned ? ' — Kargoda olarak işaretlendi, müşteriye e-posta gönderildi.' : ''}`);
+                } else if (data.setOrder && data.setOrder.cancelled) {
+                    arasDurumCache[id] = { durum: 'Aras’ta iptal edilmiş', takipNo: '' };
+                    toast(`Sipariş #${id}: Aras kaydı iptal edilmiş. Yeniden gönderebilirsiniz.`);
+                } else if (data.setOrder && data.setOrder.sent) {
+                    arasDurumCache[id] = { durum: 'Aras’ta işleniyor (irsaliye bekleniyor)', takipNo: '' };
+                    toast(`Sipariş #${id}: Aras sisteminde, henüz takip numarası yok.`);
+                } else {
+                    arasDurumCache[id] = { durum: 'Aras’a iletilmemiş', takipNo: '' };
+                    toast(`Sipariş #${id}: Aras’a iletilmemiş.`, 'error');
+                }
+                if (data.transitioned) yukleKargolar();
+                else kargolariCiz();
+            } catch (e) {
+                toast('Durum sorgulanamadı.', 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = 'Durum Sorgula'; }
+            }
+        }
+
+        async function kargoOnayla(id, btn) {
+            if (!confirm(`Sipariş #${id} onaylanacak ve bilgileri Aras Kargo'ya gönderilecek. Onaylıyor musunuz?`)) return;
+            if (btn) { btn.disabled = true; btn.textContent = 'Onaylanıyor...'; }
+            try {
+                const res = await adminFetch(`/api/admin/shipments/${id}/approve`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) toast(data.message || `Sipariş #${id} onaylandı ve Aras'a iletildi.`);
+                else toast(data.message || 'Onay/ gönderim başarısız.', 'error');
+                delete arasDurumCache[id];
+                await yukleKargolar();
+            } catch (e) {
+                toast('Onay sırasında hata oluştu.', 'error');
+                if (btn) { btn.disabled = false; btn.textContent = 'Onayla ve Kargoya Gönder'; }
+            }
+        }
+
+        async function kargoGonder(id, btn) {
+            if (!confirm(`Sipariş #${id} Aras Kargo'ya yeniden iletilecek. Onaylıyor musunuz?`)) return;
+            if (btn) { btn.disabled = true; btn.textContent = 'Gönderiliyor...'; }
+            try {
+                const res = await adminFetch(`/api/admin/shipments/${id}/send`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) toast(data.message || `Sipariş #${id} iletildi.`);
+                else toast(data.message || 'Gönderim başarısız.', 'error');
+                delete arasDurumCache[id];
+                await yukleKargolar();
+            } catch (e) {
+                toast('Gönderim sırasında hata oluştu.', 'error');
+                if (btn) { btn.disabled = false; btn.textContent = 'Tekrar Gönder'; }
+            }
+        }
+
+        async function kargoIptal(id, btn) {
+            const reason = prompt(`Sipariş #${id} iptal edilecek.\n\nİptal nedeni (müşteriye e-postayla gönderilecek):`);
+            if (reason === null) return; // vazgeçildi
+            if (!reason.trim()) {
+                toast('İptal nedeni boş olamaz, işlem yapılmadı.', 'error');
+                return;
+            }
+            if (btn) { btn.disabled = true; btn.textContent = 'İptal ediliyor...'; }
+            try {
+                const res = await adminFetch(`/api/admin/shipments/${id}/cancel`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reason: reason.trim() })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    if (data.arasWarning) {
+                        toast(`Sipariş #${id} iptal edildi ve müşteriye e-posta gönderildi. UYARI: Aras kaydı iptal edilemedi (${data.arasWarning}) — manuel takip gerekli.`, 'error');
+                    } else {
+                        toast(`Sipariş #${id} iptal edildi, müşteriye e-posta gönderildi.`);
+                    }
+                } else {
+                    toast(`İptal başarısız (${esc(data.code || '?')}): ${data.message || ''}`, 'error');
+                }
+                delete arasDurumCache[id];
+                await yukleKargolar();
+            } catch (e) {
+                toast('İptal sırasında hata oluştu.', 'error');
+                if (btn) { btn.disabled = false; btn.textContent = 'İptal Et'; }
+            }
+        }
+
+        document.getElementById('adm-shipments-list').addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-kargo-action]');
+            if (!btn) return;
+            const id = btn.dataset.id;
+            if (btn.dataset.kargoAction === 'status') kargoDurumSorgula(id, btn);
+            else if (btn.dataset.kargoAction === 'approve') kargoOnayla(id, btn);
+            else if (btn.dataset.kargoAction === 'send') kargoGonder(id, btn);
+            else if (btn.dataset.kargoAction === 'cancel') kargoIptal(id, btn);
         });
 
-        document.getElementById('adm-export-btn').onclick = async () => {
-            const btn = document.getElementById('adm-export-btn');
-            btn.disabled = true;
-            btn.textContent = 'Hazırlanıyor...';
+        document.getElementById('adm-shipment-search').addEventListener('input', kargolariCiz);
+        document.getElementById('adm-refresh-shipments').onclick = yukleKargolar;
+
+        async function kargoExcelIndir(tab, btn) {
+            if (btn) { btn.disabled = true; }
             try {
-                const res = await adminFetch('/api/admin/orders/export');
+                const res = await adminFetch(`/api/admin/shipments/export?tab=${encodeURIComponent(tab)}`);
+                if (!res.ok) {
+                    toast('Excel dosyası alınamadı.', 'error');
+                    return;
+                }
                 const blob = await res.blob();
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = 'Feyzay_Siparisler.xlsx';
+                a.download = `Feyzay_Kargo_${tab === 'all' ? 'Tumu' : tab}.xlsx`;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
@@ -1169,10 +1319,22 @@
             } catch (e) {
                 toast('Excel indirilemedi.', 'error');
             } finally {
-                btn.disabled = false;
-                btn.textContent = '⬇ Excel İndir';
+                if (btn) { btn.disabled = false; }
             }
-        };
+        }
+
+        document.querySelectorAll('[data-xls]').forEach(btn => {
+            btn.addEventListener('click', () => kargoExcelIndir(btn.dataset.xls, btn));
+        });
+
+        document.querySelectorAll('[data-shipment-filter]').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('[data-shipment-filter]').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                aktifKargoFiltre = tab.dataset.shipmentFilter;
+                kargolariCiz();
+            });
+        });
 
         // =====================================================================
         // ============================= ÜRÜNLER ==============================
@@ -1184,7 +1346,6 @@
                 const data = await res.json();
                 butunUrunlerAdmin = data.products || [];
                 urunleriCiz();
-                siparisleriCiz(); // Ürünler yüklendiğinde siparişleri resimleriyle tekrar çiz
             } catch (e) {
                 if (grid) grid.innerHTML = '<p class="adm-empty">Ürünler yüklenemedi.</p>';
             }
