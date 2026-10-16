@@ -4,6 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="assets/img/apple-touch-icon.png">
+    <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+    <meta name="description" content="Feyzay ürün detayları: renk ve beden seçenekleri, güvenli ödeme ve hızlı kargo ile alışverişin keyfini çıkarın.">
     <title>Ürün Detayı - Feyzay</title>
     <link rel="stylesheet" href="assets/css/style.css?v=2">
     <style>
@@ -1004,6 +1007,59 @@
 
             const anaTag = (urun.tags && urun.tags.length > 0) ? urun.tags[0] : null;
             let currentStock = colorList ? currentColor().stock : urun.stock;
+
+            // SEO: ürün bazlı title, meta açıklama, kanonik URL, OG/Twitter etiketleri ve Product yapısal verisi
+            const seoImage = images[0];
+            const seoUrl = window.location.origin + window.location.pathname + '?id=' + encodeURIComponent(urun.id);
+            const seoDesc = (urun.name + " — uygun fiyat, güvenli ödeme ve hızlı kargo ile Feyzay'da.").slice(0, 160);
+            document.title = urun.name + ' | Feyzay';
+            const setMeta = (selector, value) => {
+                let el = document.head.querySelector(selector);
+                if (!el) {
+                    el = document.createElement('meta');
+                    const [, key, val] = selector.match(/\[(name|property)="(.+?)"\]/);
+                    el.setAttribute(key, val);
+                    document.head.appendChild(el);
+                }
+                el.setAttribute('content', value);
+            };
+            setMeta('meta[name="description"]', seoDesc);
+            setMeta('meta[property="og:title"]', document.title);
+            setMeta('meta[property="og:description"]', seoDesc);
+            setMeta('meta[property="og:type"]', 'product');
+            setMeta('meta[property="og:url"]', seoUrl);
+            if (seoImage) setMeta('meta[property="og:image"]', seoImage);
+            setMeta('meta[name="twitter:card"]', 'summary_large_image');
+            setMeta('meta[name="twitter:title"]', document.title);
+            setMeta('meta[name="twitter:description"]', seoDesc);
+            if (seoImage) setMeta('meta[name="twitter:image"]', seoImage);
+            let canonical = document.head.querySelector('link[rel="canonical"]');
+            if (!canonical) {
+                canonical = document.createElement('link');
+                canonical.rel = 'canonical';
+                document.head.appendChild(canonical);
+            }
+            canonical.href = seoUrl;
+            const stokVarmi = colorList ? colorList.some(c => c.stock > 0) : (urun.stock == null || urun.stock > 0);
+            const ldScript = document.createElement('script');
+            ldScript.type = 'application/ld+json';
+            ldScript.textContent = JSON.stringify({
+                '@context': 'https://schema.org',
+                '@type': 'Product',
+                name: urun.name,
+                image: images,
+                description: seoDesc,
+                sku: urun.id,
+                brand: { '@type': 'Brand', name: 'Feyzay' },
+                offers: {
+                    '@type': 'Offer',
+                    url: seoUrl,
+                    priceCurrency: 'TRY',
+                    price: urun.price,
+                    availability: stokVarmi ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'
+                }
+            });
+            document.head.appendChild(ldScript);
 
             const thumbsHtml = () => images.map((img, idx) => `
                 <button class="pdp-thumb ${idx === 0 ? 'active' : ''}" data-idx="${idx}" aria-label="Görsel ${idx + 1}">

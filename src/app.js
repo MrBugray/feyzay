@@ -1,6 +1,7 @@
 // Express uygulaması: ara katman sıralama ve rota montajı. Port bağlama server.js'te.
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
 const path = require('path');
 const config = require('./config');
 const { oturumYukleyici } = require('./middleware/session');
@@ -37,6 +38,45 @@ app.use(express.static(config.PUBLIC_DIR, {
 // Ürün kataloğu istemciler tarafından bu adresten okunur.
 app.get('/products.json', (req, res) => {
     res.sendFile(config.PRODUCTS_PATH);
+});
+
+// Arama motorları: robots.txt ve ürün kataloğundan üretilen sitemap.xml
+app.get('/robots.txt', (req, res) => {
+    res.type('text/plain');
+    res.send([
+        'User-agent: *',
+        'Allow: /',
+        'Disallow: /admin.html',
+        'Disallow: /kayit.html',
+        '',
+        `Sitemap: ${config.SITE_URL}/sitemap.xml`,
+        ''
+    ].join('\n'));
+});
+
+app.get('/sitemap.xml', (req, res) => {
+    try {
+        const products = JSON.parse(fs.readFileSync(config.PRODUCTS_PATH, 'utf8'));
+        const base = config.SITE_URL.replace(/\/+$/, '');
+        const statikSayfalar = [
+            '',
+            'urunler.html',
+            'teslimat-odeme-kosullari.html',
+            'iptal-iade-kosullari.html',
+            'on-bilgilendirme-formu.html',
+            'mesafeli-satis-sozlesmesi.html',
+            'gizlilik-politikasi.html',
+            'kvkk.html',
+            'kullanim-sartlari.html'
+        ];
+        const urls = statikSayfalar
+            .map(p => `  <url><loc>${base}/${p}</loc></url>`)
+            .concat(products.map(p => `  <url><loc>${base}/detay.html?id=${encodeURIComponent(p.id)}</loc></url>`));
+        res.type('application/xml');
+        res.send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>`);
+    } catch (err) {
+        res.status(500).send('Sitemap oluşturulamadı.');
+    }
 });
 
 app.use(authRoutes);
