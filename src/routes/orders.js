@@ -431,6 +431,7 @@ router.post('/api/user/orders', kullaniciGerekli, (req, res) => {
                     district: decryptData(row.district),
                     cargoState: row.cargo_state,
                     cargoTrackingCode: row.cargo_tracking_code,
+                    approvalState: row.approval_state,
                     cancelReason: row.cancel_reason || null,
                     createdAt: row.created_at,
                     cartData: []

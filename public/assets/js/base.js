@@ -505,6 +505,17 @@ window.viewOrdersModal = async function () {
                 `;
                     return;
                 }
+                let durumHtml;
+                if (order.cargoState === 1) {
+                    const takipLink = order.cargoTrackingCode
+                        ? `<a href="http://kargotakip.araskargo.com.tr/mainpage.aspx?code=${encodeURIComponent(order.cargoTrackingCode)}" target="_blank" rel="noopener" style="color:#3498db; text-decoration:none; font-weight:bold; font-size:12px; margin-left:8px; border-left:1px solid #ddd; padding-left:8px;">Takip Ekranı ↗</a>`
+                        : '';
+                    durumHtml = `<span style="color:#2ecc71; font-weight:bold;">Kargoda</span> ${takipLink}`;
+                } else if (order.approvalState === 0) {
+                    durumHtml = `<span style="color:#7f8c8d; font-weight:bold;">Onay Bekliyor</span>`;
+                } else {
+                    durumHtml = `<span style="color:#f39c12; font-weight:bold;">Hazırlanıyor</span>`;
+                }
                 html += `
                     <div style="padding:15px; border:1px solid #eee; border-radius:6px; margin-bottom:10px; font-size:14px; background:#fcfcfc;">
                         <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:5px;">
@@ -512,7 +523,7 @@ window.viewOrdersModal = async function () {
                             <span>${new Date(order.createdAt).toLocaleDateString('tr-TR')}</span>
                         </div>
                         <div style="margin-bottom:10px; font-size:13px; background:#fff; padding:8px 12px; border:1px solid #e1e8ed; border-radius:4px;">
-                            <strong>Kargo Durumu:</strong> <span id="live-cargo-${order.id}" style="color:#888; font-style:italic;">Aras Kargo'dan sorgulanıyor ⌛...</span>
+                            <strong>Kargo Durumu:</strong> <span id="live-cargo-${order.id}">${durumHtml}</span>
                         </div>
                         <div style="background:#fff; padding:10px; border-radius:4px; border:1px solid #f0f0f0;">
                             ${itemsHtml}
@@ -521,26 +532,26 @@ window.viewOrdersModal = async function () {
                 `;
             });
             container.innerHTML = html;
+            // Yalnızca "Kargoda" aşamasındaki siparişlerde canlı Aras durumunu zenginleştir.
             result.orders.forEach(async (order) => {
+                if (order.cancelReason || order.cargoState !== 1) return;
                 const statusSpan = document.getElementById(`live-cargo-${order.id}`);
-                if (statusSpan) {
-                    try {
-                        const cRes = await fetch('/api/user/cargo-status', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ orderId: order.id })
-                        });
-                        const cData = await cRes.json();
-
-                        if (cData.success && cData.durum) {
-                            let linkHtml = cData.takipNo ? `<a href="http://kargotakip.araskargo.com.tr/mainpage.aspx?code=${encodeURIComponent(cData.takipNo)}" target="_blank" rel="noopener" style="color:#3498db; text-decoration:none; font-weight:bold; font-size:12px; margin-left:8px; border-left:1px solid #ddd; padding-left:8px;">Takip Ekranı ↗</a>` : '';
-                            statusSpan.innerHTML = `<span style="color:#2ecc71; font-weight:bold;">${feyzayEsc(cData.durum)}</span> ${linkHtml}`;
-                        } else {
-                            statusSpan.innerHTML = `<span style="color:#f39c12; font-weight:bold;">Hazırlanıyor / Şube Onayı Bekliyor</span>`;
-                        }
-                    } catch (e) {
-                        statusSpan.innerHTML = `<span style="color:#e74c3c;">Durum Sorgulanamadı</span>`;
+                if (!statusSpan) return;
+                try {
+                    const cRes = await fetch('/api/user/cargo-status', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ orderId: order.id })
+                    });
+                    const cData = await cRes.json();
+                    if (cData.success && cData.durum) {
+                        const linkHtml = cData.takipNo
+                            ? `<a href="http://kargotakip.araskargo.com.tr/mainpage.aspx?code=${encodeURIComponent(cData.takipNo)}" target="_blank" rel="noopener" style="color:#3498db; text-decoration:none; font-weight:bold; font-size:12px; margin-left:8px; border-left:1px solid #ddd; padding-left:8px;">Takip Ekranı ↗</a>`
+                            : '';
+                        statusSpan.innerHTML = `<span style="color:#2ecc71; font-weight:bold;">Kargoda</span> <span style="color:#555;">— ${feyzayEsc(cData.durum)}</span> ${linkHtml}`;
                     }
+                } catch (e) {
+                    // Canlı sorgu başarısızsa DB'den gelen "Kargoda" etiketi görünürde kalır.
                 }
             });
 
