@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="assets/img/apple-touch-icon.png">
+    <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="description" content="Feyzay hesabınızın şifresini sıfırlayın.">
+    <title>Feyzay | Şifre Sıfırlama</title>
+    <link rel="stylesheet" href="assets/css/style.css?v=2">
+</head>
+
+<body class="auth-page">
+
+<div class="sepet-overlay" id="sepet-overlay"></div>
+<div class="sepet-sidebar" id="sepet-sidebar">
+    <div class="sepet-header">
+        <h3>Alışveriş Sepeti</h3>
+        <button id="sepet-kapat">&times;</button>
+    </div>
+
+    <div class="sepet-icerik" id="sepet-icerik">
+        <p style="text-align: center; color: #888; margin-top: 20px;">Sepetiniz şu an boş.</p>
+    </div>
+    <div class="sepet-footer">
+        <div class="sepet-toplam-kutu">
+            <span>Toplam:</span>
+            <span id="sepet-toplam-fiyat">0.00 TL</span>
+        </div>
+        <button class="satin-al-btn">Ödeme Yap</button>
+    </div>
+</div>
+
+    <header class="site-header" style="background-color: #111;">
+        <a href="index.html" class="logo" style="text-decoration: none;">FEYZAY</a>
+        <nav class="navigation">
+            <a href="index.html">Ana Sayfa</a>
+            <a href="urunler.html">Ürünler</a>
+            <a href="#" id="sepet-ac-btn">Sepet (0)</a>
+            <a href="kayit.html">Kayıt Ol</a>
+        </nav>
+    </header>
+
+    <main class="auth-section">
+        <div class="auth-container">
+
+            <form id="reset-form" class="auth-form active-form">
+                <h2 class="auth-title">Yeni Şifre Belirle</h2>
+                <div class="input-group">
+                    <label for="reset-password">Yeni Şifre</label>
+                    <input type="password" id="reset-password" placeholder="En az 6 karakter, 1 büyük 1 küçük harf, boşluksuz" required>
+                </div>
+                <div class="input-group">
+                    <label for="reset-password-confirm">Şifreyi Onayla</label>
+                    <input type="password" id="reset-password-confirm" placeholder="Şifrenizi tekrar girin" required>
+                </div>
+                <button type="submit" class="auth-submit-btn">Şifremi Güncelle</button>
+                <p id="reset-message" style="font-size: 13px; margin-top: 12px; display: none;"></p>
+            </form>
+
+        </div>
+    </main>
+
+    <footer class="feyzay-footer">
+        <div class="footer-content">
+            <div class="footer-logo">FEYZAY</div>
+            <nav class="footer-links">
+                <a href="kvkk.html">KVKK Aydınlatma Metni</a>
+                <a href="gizlilik-politikasi.html">Gizlilik ve Çerez Politikası</a>
+                <a href="mesafeli-satis-sozlesmesi.html">Mesafeli Satış Sözleşmesi</a>
+                <a href="on-bilgilendirme-formu.html">Ön Bilgilendirme Formu</a>
+                <a href="iptal-iade-kosullari.html">İptal ve İade Koşulları</a>
+                <a href="teslimat-odeme-kosullari.html">Teslimat ve Ödeme</a>
+                <a href="kullanim-sartlari.html">Üyelik Sözleşmesi</a>
+            </nav>
+            <div class="footer-copyright">
+                &copy; <span id="feyzay-footer-year">2026</span> Feyzay &mdash; Tüm hakları saklıdır.
+            </div>
+            <p class="footer-legal-note">
+                FEYZAY TEKSTİL SANAYİ TİCARET LİMİTED ŞİRKETİ &middot; Vergi Kimlik No: 3852174340 &middot;
+                Adres: Neviye Mah. Lodos Sk. No: 3/2, Arifiye / Sakarya &middot;
+                E-posta: feyzaytekstil@gmail.com &middot; Tel: +90 533 361 36 21
+                <br>Ödemeleriniz PayTR ödeme altyapısı ile 3D Secure güvencesinde işlenmektedir.
+            </p>
+        </div>
+    </footer>
+
+    <script src="assets/js/base.js?v=2"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const resetForm = document.getElementById('reset-form');
+            const resetMessage = document.getElementById('reset-message');
+            const token = new URLSearchParams(window.location.search).get('token');
+
+            const mesajGoster = (metin, renk) => {
+                resetMessage.textContent = metin;
+                resetMessage.style.color = renk;
+                resetMessage.style.display = 'block';
+            };
+
+            if (!token) {
+                resetForm.querySelectorAll('input, button').forEach(el => el.disabled = true);
+                mesajGoster('Geçersiz bağlantı.', '#c0392b');
+                return;
+            }
+
+            resetForm.onsubmit = async (e) => {
+                e.preventDefault();
+
+                const password = document.getElementById('reset-password').value;
+                const passwordConfirm = document.getElementById('reset-password-confirm').value;
+
+                if (password !== passwordConfirm) return mesajGoster('Şifreler eşleşmiyor!', '#c0392b');
+                if (!(/^(?=.*[a-z])(?=.*[A-Z])(?!.*\s).{6,}$/.test(password))) {
+                    return mesajGoster('Şifre en az 6 haneli, 1 büyük ve 1 küçük harf içermeli, boşluk içermemelidir!', '#c0392b');
+                }
+
+                const btn = resetForm.querySelector('button[type="submit"]');
+                btn.innerText = 'Güncelleniyor...';
+                btn.disabled = true;
+                try {
+                    const res = await fetch('/api/reset-password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token, password })
+                    });
+                    const d = await res.json();
+                    mesajGoster(d.message, d.success ? '#1a8f4c' : '#c0392b');
+                    if (d.success) {
+                        setTimeout(() => window.location.href = 'kayit.html', 2500);
+                    }
+                } catch (err) {
+                    mesajGoster('Sunucu hatası! Terminali kontrol edin.', '#c0392b');
+                } finally {
+                    btn.innerText = 'Şifremi Güncelle';
+                    btn.disabled = false;
+                }
+            };
+        });
+    </script>
+</body>
+
+</html>

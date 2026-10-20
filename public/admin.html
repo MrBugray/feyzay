@@ -722,6 +722,33 @@
             display: none;
         }
 
+        /* ============ KULLANICI LİSTESİ ============ */
+        .adm-user-card-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .adm-user-orders-count {
+            font-size: 12.5px;
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        .adm-user-edit-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0 16px;
+        }
+
+        @media (max-width: 700px) {
+            .adm-user-edit-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         /* ============ TOAST ============ */
         .adm-toast {
             position: fixed;
@@ -811,6 +838,7 @@
             <div class="adm-brand-sub">ADMIN PANELİ</div>
 
             <button class="adm-nav-btn active" data-view="shipments">Kargo Yönetimi</button>
+            <button class="adm-nav-btn" data-view="users">Kullanıcılar</button>
             <button class="adm-nav-btn" data-view="products">Ürünler</button>
 
             <div class="adm-nav-footer">
@@ -833,6 +861,22 @@
                 </div>
 
                 <div class="adm-products-grid" id="adm-products-grid">
+                    <p class="adm-empty">Yükleniyor...</p>
+                </div>
+            </section>
+
+            <!-- ================= KULLANICILAR ================= -->
+            <section class="adm-view" id="adm-view-users">
+                <div class="adm-view-header">
+                    <h2>Kullanıcılar</h2>
+                    <div class="adm-toolbar">
+                        <input type="text" class="adm-input" id="adm-user-search"
+                            placeholder="İsim veya e-posta ara...">
+                        <button class="adm-btn adm-btn-outline" id="adm-refresh-users">Yenile</button>
+                    </div>
+                </div>
+
+                <div class="adm-orders-list" id="adm-users-list">
                     <p class="adm-empty">Yükleniyor...</p>
                 </div>
             </section>
@@ -958,6 +1002,82 @@
         </div>
     </div>
 
+    <!-- ============ KULLANICI SİPARİŞLERİ MODALI ============ -->
+    <div class="adm-modal-overlay" id="adm-user-orders-modal">
+        <div class="adm-modal">
+            <h3 id="adm-user-orders-title">Kullanıcı Siparişleri</h3>
+            <p class="adm-modal-sub" id="adm-user-orders-sub"></p>
+            <div class="adm-orders-list" id="adm-user-orders-body"></div>
+            <div class="adm-modal-actions">
+                <button type="button" class="adm-btn adm-btn-outline" id="adm-user-orders-close">Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ KULLANICI DÜZENLEME MODALI ============ -->
+    <div class="adm-modal-overlay" id="adm-user-modal">
+        <div class="adm-modal">
+            <h3>Kullanıcıyı Düzenle</h3>
+            <p class="adm-modal-sub">Boş bırakılan şifre alanı mevcut şifreyi değiştirmez.</p>
+            <div class="adm-form-error" id="adm-user-form-error"></div>
+
+            <form id="adm-user-form">
+                <div class="adm-user-edit-grid">
+                    <div class="adm-field">
+                        <label>İsim</label>
+                        <input type="text" id="u-firstname">
+                    </div>
+                    <div class="adm-field">
+                        <label>Soyisim</label>
+                        <input type="text" id="u-lastname">
+                    </div>
+                </div>
+                <div class="adm-field">
+                    <label>E-posta</label>
+                    <input type="text" id="u-email">
+                </div>
+                <div class="adm-user-edit-grid">
+                    <div class="adm-field">
+                        <label>Şehir</label>
+                        <input type="text" id="u-city">
+                    </div>
+                    <div class="adm-field">
+                        <label>İlçe</label>
+                        <input type="text" id="u-district">
+                    </div>
+                </div>
+                <div class="adm-field">
+                    <label>Adres</label>
+                    <input type="text" id="u-street">
+                </div>
+                <div class="adm-user-edit-grid">
+                    <div class="adm-field">
+                        <label>Posta Kodu</label>
+                        <input type="text" id="u-zipcode">
+                    </div>
+                    <div class="adm-field">
+                        <label>Yeni Şifre (opsiyonel)</label>
+                        <input type="text" id="u-password" placeholder="Boş bırakılırsa değişmez" autocomplete="new-password">
+                    </div>
+                </div>
+
+                <div class="adm-toggle-row">
+                    <input type="checkbox" id="u-verified">
+                    <label for="u-verified" style="margin:0; cursor:pointer;">E-posta onaylı</label>
+                </div>
+                <div class="adm-toggle-row">
+                    <input type="checkbox" id="u-marketing">
+                    <label for="u-marketing" style="margin:0; cursor:pointer;">Pazarlama izni var</label>
+                </div>
+
+                <div class="adm-modal-actions">
+                    <button type="button" class="adm-btn adm-btn-outline" id="u-cancel-btn">Vazgeç</button>
+                    <button type="submit" class="adm-btn" id="u-submit-btn">Kullanıcıyı Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="adm-toast" id="adm-toast"></div>
 
     <script>
@@ -1041,6 +1161,7 @@
             document.getElementById('adm-app').classList.add('active');
             yukleUrunler();
             yukleKargolar();
+            yukleKullanicilar();
         }
 
         // ---------- Giriş ----------
@@ -1602,6 +1723,207 @@
                 submitBtn.textContent = 'Ürünü Kaydet';
             }
         });
+
+        // =====================================================================
+        // =========================== KULLANICILAR ===========================
+        // =====================================================================
+        let butunKullanicilar = [];
+        let duzenlenenKullaniciId = null;
+
+        async function yukleKullanicilar() {
+            const list = document.getElementById('adm-users-list');
+            try {
+                const res = await adminFetch('/api/admin/users');
+                const data = await res.json();
+                butunKullanicilar = data.users || [];
+                kullanicilariCiz();
+            } catch (e) {
+                if (list) list.innerHTML = '<p class="adm-empty">Kullanıcılar yüklenemedi.</p>';
+            }
+        }
+
+        function kullanicilariCiz() {
+            const list = document.getElementById('adm-users-list');
+            const arama = document.getElementById('adm-user-search').value.toLowerCase().trim();
+            let liste = butunKullanicilar;
+            if (arama) {
+                liste = liste.filter(u => `${u.firstName || ''} ${u.lastName || ''} ${u.email}`.toLowerCase().includes(arama));
+            }
+            if (liste.length === 0) {
+                list.innerHTML = '<p class="adm-empty">Kullanıcı bulunamadı.</p>';
+                return;
+            }
+            list.innerHTML = liste.map(u => `
+                <div class="adm-order-card">
+                    <div class="adm-order-top">
+                        <div>
+                            <div class="adm-order-id">${esc(u.firstName)} ${esc(u.lastName)}</div>
+                            <div class="adm-order-date">${esc(u.email)}</div>
+                        </div>
+                        ${u.isVerified
+                            ? '<span class="adm-badge good"><span class="dot"></span>Onaylı</span>'
+                            : '<span class="adm-badge wait"><span class="dot"></span>Onaysız</span>'}
+                    </div>
+                    <div class="adm-user-card-bottom">
+                        <span class="adm-user-orders-count">${u.orderCount} sipariş${u.marketingConsent ? ' · pazarlama izni var' : ''}</span>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <button class="adm-btn adm-btn-outline" data-user-action="orders" data-id="${u.id}">Siparişler</button>
+                            <button class="adm-btn adm-btn-outline" data-user-action="edit" data-id="${u.id}">Düzenle</button>
+                            <button class="adm-btn adm-btn-danger" data-user-action="delete" data-id="${u.id}">Sil</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('adm-user-search').addEventListener('input', kullanicilariCiz);
+        document.getElementById('adm-refresh-users').onclick = yukleKullanicilar;
+
+        document.getElementById('adm-users-list').addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-user-action]');
+            if (!btn) return;
+            const id = Number(btn.dataset.id);
+            if (btn.dataset.userAction === 'orders') kullaniciSiparisleri(id);
+            else if (btn.dataset.userAction === 'edit') kullaniciDuzenle(id);
+            else if (btn.dataset.userAction === 'delete') kullaniciSil(id);
+        });
+
+        // ---------- Kullanıcının siparişleri ----------
+        async function kullaniciSiparisleri(id) {
+            const u = butunKullanicilar.find(k => k.id === id);
+            document.getElementById('adm-user-orders-sub').textContent = u ? `${u.firstName} ${u.lastName} · ${u.email}` : '';
+            const body = document.getElementById('adm-user-orders-body');
+            body.innerHTML = '<p class="adm-empty">Yükleniyor...</p>';
+            document.getElementById('adm-user-orders-modal').classList.add('active');
+            try {
+                const res = await adminFetch(`/api/admin/users/${id}/orders`);
+                const data = await res.json();
+                const orders = data.orders || [];
+                if (orders.length === 0) {
+                    body.innerHTML = '<p class="adm-empty">Bu kullanıcının siparişi yok.</p>';
+                    return;
+                }
+                body.innerHTML = orders.map(o => {
+                    const tarih = new Date(o.createdAt).toLocaleString('tr-TR');
+                    const kargoBadge = o.cargoState === 1
+                        ? '<span class="adm-badge good"><span class="dot"></span>Kargoda</span>'
+                        : '<span class="adm-badge info"><span class="dot"></span>Hazırlanıyor</span>';
+                    const kalemler = o.cartData.map(i => `
+                        <div class="adm-item-row">${esc(i.name)} <span class="adm-item-meta">(${esc(i.beden)}${i.renk ? ' - ' + esc(i.renk) : ''}) × ${i.adet}</span></div>
+                    `).join('');
+                    return `
+                        <div class="adm-order-card">
+                            <div class="adm-order-top">
+                                <div>
+                                    <div class="adm-order-id">Sipariş #${o.id}</div>
+                                    <div class="adm-order-date">${tarih}</div>
+                                </div>
+                                ${kargoBadge}
+                            </div>
+                            <div class="adm-order-body">
+                                <div class="adm-order-col">
+                                    <h4>Ürünler</h4>
+                                    ${kalemler || '<p>-</p>'}
+                                </div>
+                                <div class="adm-order-col">
+                                    <h4>Adres</h4>
+                                    <p>${esc(o.district)} / ${esc(o.city)}<br>${esc(o.street)} ${esc(o.zipcode)}</p>
+                                </div>
+                                <div class="adm-order-col">
+                                    <h4>Takip Numarası</h4>
+                                    <p><strong>${esc(o.cargoTrackingCode || '—')}</strong></p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                body.innerHTML = '<p class="adm-empty">Siparişler yüklenemedi.</p>';
+            }
+        }
+        document.getElementById('adm-user-orders-close').onclick = () => document.getElementById('adm-user-orders-modal').classList.remove('active');
+
+        // ---------- Kullanıcı düzenleme ----------
+        function kullaniciDuzenle(id) {
+            const u = butunKullanicilar.find(k => k.id === id);
+            if (!u) return;
+            duzenlenenKullaniciId = id;
+            document.getElementById('adm-user-form-error').style.display = 'none';
+            document.getElementById('u-firstname').value = u.firstName || '';
+            document.getElementById('u-lastname').value = u.lastName || '';
+            document.getElementById('u-email').value = u.email || '';
+            document.getElementById('u-city').value = u.city || '';
+            document.getElementById('u-district').value = u.district || '';
+            document.getElementById('u-street').value = u.street || '';
+            document.getElementById('u-zipcode').value = u.zipcode || '';
+            document.getElementById('u-password').value = '';
+            document.getElementById('u-verified').checked = !!u.isVerified;
+            document.getElementById('u-marketing').checked = !!u.marketingConsent;
+
+            document.getElementById('adm-user-modal').classList.add('active');
+        }
+        document.getElementById('u-cancel-btn').onclick = () => document.getElementById('adm-user-modal').classList.remove('active');
+
+        document.getElementById('adm-user-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const errEl = document.getElementById('adm-user-form-error');
+            errEl.style.display = 'none';
+
+            const govde = {
+                firstName: document.getElementById('u-firstname').value.trim(),
+                lastName: document.getElementById('u-lastname').value.trim(),
+                email: document.getElementById('u-email').value.trim(),
+                city: document.getElementById('u-city').value.trim(),
+                district: document.getElementById('u-district').value.trim(),
+                street: document.getElementById('u-street').value.trim(),
+                zipcode: document.getElementById('u-zipcode').value.trim(),
+                isVerified: document.getElementById('u-verified').checked,
+                marketingConsent: document.getElementById('u-marketing').checked
+            };
+            const yeniSifre = document.getElementById('u-password').value;
+            if (yeniSifre) govde.password = yeniSifre;
+
+            const submitBtn = document.getElementById('u-submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Kaydediliyor...';
+            try {
+                const res = await adminFetch('/api/admin/users/' + duzenlenenKullaniciId, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(govde)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    toast('Kullanıcı güncellendi.');
+                    document.getElementById('adm-user-modal').classList.remove('active');
+                    yukleKullanicilar();
+                } else {
+                    errEl.textContent = data.message || 'Bir hata oluştu.';
+                    errEl.style.display = 'block';
+                }
+            } catch (e2) {
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Kullanıcıyı Kaydet';
+            }
+        });
+
+        // ---------- Kullanıcı silme ----------
+        async function kullaniciSil(id) {
+            const u = butunKullanicilar.find(k => k.id === id);
+            const ad = u ? `${u.firstName} ${u.lastName} (${u.email})` : '#' + id;
+            if (!confirm(ad + ' adlı kullanıcının hesabı kalıcı olarak silinecek. Bu işlem geri alınamaz. Onaylıyor musunuz?')) return;
+            try {
+                const res = await adminFetch('/api/admin/users/' + id, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    toast('Kullanıcı silindi.');
+                    yukleKullanicilar();
+                } else {
+                    toast(data.message || 'Silinemedi.', 'error');
+                }
+            } catch (e) { }
+        }
 
         // ---------- Başlangıç ----------
         // Panelin açılıp açılmayacağına yalnızca sunucudaki oturum karar verir.

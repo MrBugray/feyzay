@@ -35,6 +35,8 @@ db.serialize(() => {
     db.run(`ALTER TABLE users ADD COLUMN consent_date DATETIME`, () => { });
     db.run(`ALTER TABLE users ADD COLUMN is_verified INTEGER DEFAULT 0`, () => { });
     db.run(`ALTER TABLE users ADD COLUMN verify_token TEXT`, () => { });
+    db.run(`ALTER TABLE users ADD COLUMN reset_token TEXT`, () => { });
+    db.run(`ALTER TABLE users ADD COLUMN reset_expires INTEGER`, () => { });
 
     db.run(`CREATE TABLE IF NOT EXISTS sessions (
         sid TEXT PRIMARY KEY,
@@ -86,6 +88,21 @@ db.serialize(() => {
     db.run(`ALTER TABLE orders ADD COLUMN phone TEXT`, () => { });
     db.run(`ALTER TABLE orders ADD COLUMN cancel_reason TEXT`, () => { });
     db.run(`ALTER TABLE orders ADD COLUMN approval_state INTEGER DEFAULT 0`, () => { });
+
+    // Ürün kataloğu: dizi/nesne alanları JSON metin olarak saklanır.
+    db.run(`CREATE TABLE IF NOT EXISTS products (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        price REAL NOT NULL DEFAULT 0,
+        tags TEXT,
+        sizes TEXT,
+        colors TEXT,
+        stock INTEGER,
+        image TEXT,
+        images TEXT
+    )`);
+
+    db.run(`ALTER TABLE products ADD COLUMN description TEXT`, () => { });
 });
 
 module.exports = { db, dbGet };

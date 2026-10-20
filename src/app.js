@@ -1,10 +1,10 @@
 // Express uygulaması: ara katman sıralama ve rota montajı. Port bağlama server.js'te.
 const express = require('express');
 const cors = require('cors');
-const fs = require('fs');
 const path = require('path');
 const config = require('./config');
 const { oturumYukleyici } = require('./middleware/session');
+const { katalog } = require('./lib/catalog');
 
 const authRoutes = require('./routes/auth');
 const orderRoutes = require('./routes/orders');
@@ -37,7 +37,7 @@ app.use(express.static(config.PUBLIC_DIR, {
 
 // Ürün kataloğu istemciler tarafından bu adresten okunur.
 app.get('/products.json', (req, res) => {
-    res.sendFile(config.PRODUCTS_PATH);
+    res.json(katalog());
 });
 
 // Arama motorları: robots.txt ve ürün kataloğundan üretilen sitemap.xml
@@ -48,6 +48,7 @@ app.get('/robots.txt', (req, res) => {
         'Allow: /',
         'Disallow: /admin.html',
         'Disallow: /kayit.html',
+        'Disallow: /sifre-sifirla.html',
         '',
         `Sitemap: ${config.SITE_URL}/sitemap.xml`,
         ''
@@ -56,7 +57,7 @@ app.get('/robots.txt', (req, res) => {
 
 app.get('/sitemap.xml', (req, res) => {
     try {
-        const products = JSON.parse(fs.readFileSync(config.PRODUCTS_PATH, 'utf8'));
+        const products = katalog();
         const base = config.SITE_URL.replace(/\/+$/, '');
         const statikSayfalar = [
             '',

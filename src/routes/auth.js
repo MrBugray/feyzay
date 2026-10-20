@@ -110,6 +110,63 @@ router.post('/api/logout', (req, res) => {
     oturumKapat(req, res, () => res.json({ success: true }));
 });
 
+// --- ŞİFRE SIFIRLAMA ---
+// Kullanıcı var/yok ayrımı yapılmaz; yanıt her zaman aynıdır.
+router.post('/api/forgot-password', (req, res) => {
+    const { email } = req.body;
+    const basariliYanit = { success: true, message: 'Eğer bu e-posta kayıtlıysa, şifre sıfırlama bağlantısı gönderildi.' };
+    if (!email) return res.json(basariliYanit);
+
+    db.get(`SELECT id, first_name FROM users WHERE email = ?`, [email], (err, row) => {
+        if (err || !row) return res.json(basariliYanit);
+
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const suresi = Date.now() + 3600000; // 1 saat
+
+        db.run(`UPDATE users SET reset_token = ?, reset_expires = ? WHERE id = ?`, [resetToken, suresi, row.id], (err2) => {
+            if (err2) return res.status(500).json({ success: false, message: 'Veritabanı hatası.' });
+
+            const sifirlamaLinki = `${config.SITE_URL}/sifre-sifirla.html?token=${resetToken}`;
+            const mailIcerigi = `
+                <div style="font-family: sans-serif; color: #111; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 8px; text-align: center;">
+                    <h2 style="color: #111;">Şifre Sıfırlama</h2>
+                    <p>Merhaba ${row.first_name},</p>
+                    <p>Hesabınız için şifre sıfırlama talebinde bulunuldu. Yeni şifrenizi belirlemek için aşağıdaki butona tıklayın:</p>
+                    <br>
+                    <a href="${sifirlamaLinki}" style="display: inline-block; padding: 12px 24px; background-color: #111; color: #fff; text-decoration: none; border-radius: 4px; font-weight: bold;">Şifremi Sıfırla</a>
+                    <br><br>
+                    <p>Bu bağlantı 1 saat içinde geçerliliğini yitirir. Bu talebi siz yapmadıysanız bu e-postayı yok sayabilirsiniz.</p>
+                    <p style="font-size: 12px; color: #888;">Buton çalışmıyorsa aşağıdaki linki tarayıcınıza yapıştırabilirsiniz:<br>${sifirlamaLinki}</p>
+                </div>
+            `;
+
+            sendMail(email, "Feyzay - Şifre Sıfırlama", mailIcerigi);
+            res.json(basariliYanit);
+        });
+    });
+});
+
+router.post('/api/reset-password', (req, res) => {
+    const { token, password } = req.body;
+    if (!token || !password) {
+        return res.status(400).json({ success: false, message: 'Geçersiz veya süresi dolmuş bağlantı.' });
+    }
+    if (!(/^(?=.*[a-z])(?=.*[A-Z])(?!.*\s).{6,}$/.test(password))) {
+        return res.status(400).json({ success: false, message: 'Şifre en az 6 haneli, 1 büyük ve 1 küçük harf içermeli, boşluk içermemelidir.' });
+    }
+
+    db.get(`SELECT id FROM users WHERE reset_token = ? AND reset_expires > ?`, [token, Date.now()], (err, row) => {
+        if (err) return res.status(500).json({ success: false, message: 'Veritabanı hatası.' });
+        if (!row) return res.status(400).json({ success: false, message: 'Geçersiz veya süresi dolmuş bağlantı.' });
+
+        db.run(`UPDATE users SET password = ?, reset_token = NULL, reset_expires = NULL WHERE id = ?`,
+            [hashPassword(password), row.id], (err2) => {
+                if (err2) return res.status(500).json({ success: false, message: 'Veritabanı hatası.' });
+                res.json({ success: true, message: 'Şifreniz güncellendi. Giriş yapabilirsiniz.' });
+            });
+    });
+});
+
 router.get('/api/me', (req, res) => {
     if (!req.oturum) return res.json({ success: true, user: null, isAdmin: false });
 

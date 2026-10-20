@@ -951,6 +951,49 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         };
     }
+
+    // Şifremi unuttum: giriş formunun altındaki satır içi form
+    const forgotToggle = document.getElementById('forgot-toggle');
+    const forgotForm = document.getElementById('forgot-form');
+    if (forgotToggle && forgotForm) {
+        forgotToggle.onclick = (e) => {
+            e.preventDefault();
+            forgotForm.style.display = forgotForm.style.display === 'none' ? 'block' : 'none';
+        };
+
+        const forgotSubmit = document.getElementById('forgot-submit');
+        const forgotMessage = document.getElementById('forgot-message');
+        forgotSubmit.onclick = async () => {
+            const email = document.getElementById('forgot-email').value.trim();
+            if (!email) {
+                forgotMessage.textContent = 'Lütfen e-posta adresinizi girin.';
+                forgotMessage.style.color = '#c0392b';
+                forgotMessage.style.display = 'block';
+                return;
+            }
+
+            forgotSubmit.innerText = 'Gönderiliyor...';
+            forgotSubmit.disabled = true;
+            try {
+                const res = await fetch('/api/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const d = await res.json();
+                forgotMessage.textContent = d.message;
+                forgotMessage.style.color = d.success ? '#1a8f4c' : '#c0392b';
+                forgotMessage.style.display = 'block';
+            } catch (err) {
+                forgotMessage.textContent = 'Sunucu hatası! Terminali kontrol edin.';
+                forgotMessage.style.color = '#c0392b';
+                forgotMessage.style.display = 'block';
+            } finally {
+                forgotSubmit.innerText = 'Sıfırlama Bağlantısı Gönder';
+                forgotSubmit.disabled = false;
+            }
+        };
+    }
 });
 
 document.addEventListener('DOMContentLoaded', () => {

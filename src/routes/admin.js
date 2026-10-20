@@ -1,10 +1,10 @@
 // Admin işlemleri: yönetici girişi, sipariş listesi/kargo/Excel dışa aktarımı,
-// ürün CRUD (products.json üzerinden).
+// ürün CRUD ve kullanıcı yönetimi (SQLite üzerinden).
 const express = require('express');
 const crypto = require('crypto');
 const { db } = require('../db');
 const config = require('../config');
-const { decryptData, verifyPassword } = require('../lib/crypto');
+const { encryptData, decryptData, hashPassword, verifyPassword } = require('../lib/crypto');
 const { sendMail } = require('../lib/mailer');
 const { urunleriOku, urunleriYaz } = require('../lib/catalog');
 const { oturumOlustur, oturumKapat, adminGerekli } = require('../middleware/session');
@@ -192,59 +192,174 @@ router.get('/api/admin/orders/export', adminGerekli, (req, res) => {
 });
 
 router.get('/api/admin/products', adminGerekli, (req, res) => {
-    try {
-        res.json({ success: true, products: urunleriOku() });
-    } catch (e) {
-        res.status(500).json({ success: false, message: 'products.json okunamadı.' });
-    }
+    res.json({ success: true, products: urunleriOku() });
 });
 
 router.post('/api/admin/products', adminGerekli, (req, res) => {
-    try {
-        const urunler = urunleriOku();
-        const yeniUrun = req.body;
-        if (!yeniUrun.id || !yeniUrun.name || yeniUrun.price === undefined || yeniUrun.price === null) {
-            return res.status(400).json({ success: false, message: 'Ürün ID, isim ve fiyat zorunludur.' });
-        }
-        if (urunler.some(u => u.id === yeniUrun.id)) {
-            return res.status(400).json({ success: false, message: 'Bu ürün ID zaten kullanılıyor.' });
-        }
-        urunler.push(yeniUrun);
-        urunleriYaz(urunler);
-        res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ success: false, message: 'Ürün kaydedilemedi.' });
+    const urunler = urunleriOku();
+    const yeniUrun = req.body;
+    if (!yeniUrun.id || !yeniUrun.name || yeniUrun.price === undefined || yeniUrun.price === null) {
+        return res.status(400).json({ success: false, message: 'Ürün ID, isim ve fiyat zorunludur.' });
     }
+    if (urunler.some(u => u.id === yeniUrun.id)) {
+        return res.status(400).json({ success: false, message: 'Bu ürün ID zaten kullanılıyor.' });
+    }
+    urunler.push(yeniUrun);
+    urunleriYaz(urunler, (err) => {
+        if (err) return res.status(500).json({ success: false, message: 'Ürün kaydedilemedi.' });
+        res.json({ success: true });
+    });
 });
 
 router.put('/api/admin/products/:id', adminGerekli, (req, res) => {
-    try {
-        const urunler = urunleriOku();
-        const idx = urunler.findIndex(u => u.id === req.params.id);
-        if (idx === -1) return res.status(404).json({ success: false, message: 'Ürün bulunamadı.' });
+    const urunler = urunleriOku();
+    const idx = urunler.findIndex(u => u.id === req.params.id);
+    if (idx === -1) return res.status(404).json({ success: false, message: 'Ürün bulunamadı.' });
 
-        if (req.body.id && req.body.id !== req.params.id && urunler.some(u => u.id === req.body.id)) {
-            return res.status(400).json({ success: false, message: 'Bu ürün ID zaten kullanılıyor.' });
-        }
-
-        urunler[idx] = req.body;
-        urunleriYaz(urunler);
-        res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ success: false, message: 'Ürün güncellenemedi.' });
+    if (req.body.id && req.body.id !== req.params.id && urunler.some(u => u.id === req.body.id)) {
+        return res.status(400).json({ success: false, message: 'Bu ürün ID zaten kullanılıyor.' });
     }
+
+    urunler[idx] = req.body;
+    urunleriYaz(urunler, (err) => {
+        if (err) return res.status(500).json({ success: false, message: 'Ürün güncellenemedi.' });
+        res.json({ success: true });
+    });
 });
 
 router.delete('/api/admin/products/:id', adminGerekli, (req, res) => {
-    try {
-        const urunler = urunleriOku();
-        const yeni = urunler.filter(u => u.id !== req.params.id);
-        if (yeni.length === urunler.length) return res.status(404).json({ success: false, message: 'Ürün bulunamadı.' });
-        urunleriYaz(yeni);
+    const urunler = urunleriOku();
+    const yeni = urunler.filter(u => u.id !== req.params.id);
+    if (yeni.length === urunler.length) return res.status(404).json({ success: false, message: 'Ürün bulunamadı.' });
+    urunleriYaz(yeni, (err) => {
+        if (err) return res.status(500).json({ success: false, message: 'Ürün silinemedi.' });
         res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ success: false, message: 'Ürün silinemedi.' });
+    });
+});
+
+// =====================================================================
+// ========================= KULLANICI YÖNETİMİ ========================
+// =====================================================================
+
+router.get('/api/admin/users', adminGerekli, (req, res) => {
+    db.all(`SELECT u.id, u.email, u.first_name, u.last_name, u.city, u.district, u.street, u.zipcode,
+                   u.is_verified, u.marketing_consent, u.consent_date,
+                   COUNT(o.id) AS order_count
+            FROM users u
+            LEFT JOIN orders o ON o.user_id = u.id
+            GROUP BY u.id
+            ORDER BY u.id DESC`, [], (err, rows) => {
+        if (err) return res.status(500).json({ success: false, message: 'Veritabanı hatası.' });
+        res.json({
+            success: true,
+            users: rows.map(row => ({
+                id: row.id,
+                email: row.email,
+                firstName: row.first_name,
+                lastName: row.last_name,
+                city: decryptData(row.city),
+                district: decryptData(row.district),
+                street: decryptData(row.street),
+                zipcode: decryptData(row.zipcode),
+                isVerified: row.is_verified,
+                marketingConsent: row.marketing_consent,
+                consentDate: row.consent_date,
+                orderCount: row.order_count
+            }))
+        });
+    });
+});
+
+router.get('/api/admin/users/:id/orders', adminGerekli, (req, res) => {
+    db.all(`SELECT o.*, i.beden, i.urun_id, i.urun_name, i.adet, i.renk FROM orders o
+            LEFT JOIN order_items i ON o.id = i.order_id
+            WHERE o.user_id = ?
+            ORDER BY o.id DESC`, [req.params.id], (err, rows) => {
+        if (err) return res.status(500).json({ success: false, message: 'Veritabanı hatası.' });
+
+        const ordersMap = {};
+        rows.forEach(row => {
+            if (!ordersMap[row.id]) {
+                ordersMap[row.id] = {
+                    id: row.id,
+                    email: decryptData(row.email),
+                    firstName: decryptData(row.first_name),
+                    lastName: decryptData(row.last_name),
+                    city: decryptData(row.city),
+                    district: decryptData(row.district),
+                    street: decryptData(row.street),
+                    zipcode: decryptData(row.zipcode),
+                    paymentStatus: row.payment_status,
+                    cargoState: row.cargo_state,
+                    cargoTrackingCode: row.cargo_tracking_code,
+                    arasError: row.aras_error,
+                    createdAt: row.created_at,
+                    cartData: []
+                };
+            }
+            if (row.urun_id) {
+                ordersMap[row.id].cartData.push({
+                    id: row.urun_id,
+                    beden: row.beden,
+                    renk: row.renk,
+                    name: row.urun_name,
+                    adet: row.adet
+                });
+            }
+        });
+
+        const finalOrders = Object.values(ordersMap).sort((a, b) => b.id - a.id);
+        res.json({ success: true, orders: finalOrders });
+    });
+});
+
+router.put('/api/admin/users/:id', adminGerekli, (req, res) => {
+    const { firstName, lastName, email, city, district, street, zipcode, isVerified, marketingConsent, password } = req.body;
+
+    if (password) {
+        if (!(/^(?=.*[a-z])(?=.*[A-Z])(?!.*\s).{6,}$/.test(password))) {
+            return res.status(400).json({ success: false, message: 'Şifre en az 6 haneli, 1 büyük ve 1 küçük harf içermeli, boşluk içermemelidir.' });
+        }
     }
+
+    const alanlar = [];
+    const degerler = [];
+    const ekle = (kolon, deger) => { alanlar.push(`${kolon} = ?`); degerler.push(deger); };
+
+    if (firstName !== undefined) ekle('first_name', firstName);
+    if (lastName !== undefined) ekle('last_name', lastName);
+    if (email !== undefined) ekle('email', email);
+    if (city !== undefined) ekle('city', encryptData(city));
+    if (district !== undefined) ekle('district', encryptData(district));
+    if (street !== undefined) ekle('street', encryptData(street));
+    if (zipcode !== undefined) ekle('zipcode', encryptData(zipcode));
+    if (isVerified !== undefined) ekle('is_verified', isVerified ? 1 : 0);
+    if (marketingConsent !== undefined) ekle('marketing_consent', marketingConsent ? 1 : 0);
+    if (password) ekle('password', hashPassword(password));
+
+    if (alanlar.length === 0) {
+        return res.status(400).json({ success: false, message: 'Güncellenecek alan gönderilmedi.' });
+    }
+
+    degerler.push(req.params.id);
+    db.run(`UPDATE users SET ${alanlar.join(', ')} WHERE id = ?`, degerler, function (err) {
+        if (err) {
+            if (err.message.includes('UNIQUE constraint failed')) {
+                return res.status(400).json({ success: false, message: 'Bu E-posta zaten kayıtlı.' });
+            }
+            return res.status(500).json({ success: false, message: 'Veritabanı hatası.' });
+        }
+        if (this.changes === 0) return res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı.' });
+        res.json({ success: true, message: 'Kullanıcı güncellendi.' });
+    });
+});
+
+router.delete('/api/admin/users/:id', adminGerekli, (req, res) => {
+    db.run(`DELETE FROM users WHERE id = ?`, [req.params.id], function (err) {
+        if (err) return res.status(500).json({ success: false, message: 'Veritabanı hatası.' });
+        if (this.changes === 0) return res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı.' });
+        res.json({ success: true });
+    });
 });
 
 module.exports = router;
