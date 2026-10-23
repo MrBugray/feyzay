@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
 });
 
 async function sendMail(to, subject, htmlContent) {
-    if (!config.env.SMTP_USER) return;
+    if (!config.env.SMTP_USER) return false;
     try {
         await transporter.sendMail({
             from: `"Feyzay" <${config.env.SMTP_USER}>`,
@@ -22,8 +22,10 @@ async function sendMail(to, subject, htmlContent) {
             html: htmlContent
         });
         console.log(`[MAIL] ${to} adresine e-posta gönderildi: ${subject}`);
+        return true;
     } catch (err) {
         console.error(`[MAIL HATASI] Gönderilemedi:`, err.message);
+        return false;
     }
 }
 

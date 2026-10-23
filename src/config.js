@@ -6,7 +6,7 @@ const path = require('path');
 const ROOT_DIR = path.join(__dirname, '..');
 const DATA_DIR = path.join(ROOT_DIR, 'data');
 const PUBLIC_DIR = path.join(ROOT_DIR, 'public');
-const DB_PATH = path.join(DATA_DIR, 'database.sqlite');
+const DB_PATH = process.env.DB_PATH || path.join(DATA_DIR, 'database.sqlite');
 const PRODUCTS_PATH = path.join(DATA_DIR, 'products.json');
 
 if (!process.env.SECRET_CRYPT_KEY) {

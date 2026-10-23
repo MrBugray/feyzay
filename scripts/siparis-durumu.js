@@ -1,5 +1,4 @@
-// Siparişin neden "Siparişlerim" ekranında görünmediğini teşhis eder.
-// Kullanım:  node scripts/siparis-durumu.js
+
 const path = require('path');
 const sqlite3 = require('sqlite3');
 

@@ -528,10 +528,45 @@ window.viewOrdersModal = async function () {
                         <div style="background:#fff; padding:10px; border-radius:4px; border:1px solid #f0f0f0;">
                             ${itemsHtml}
                         </div>
+                        ${order.cargoState !== 1 ? `<button class="user-order-cancel" data-order-id="${order.id}" style="margin-top:10px; padding:8px 14px; border:1px solid #e74c3c; background:#fff; color:#e74c3c; border-radius:4px; cursor:pointer; font-weight:bold; font-size:12px;">Siparişi İptal Et</button>` : ''}
                     </div>
                 `;
             });
             container.innerHTML = html;
+
+            // Yalnızca kargoya verilmemiş siparişlerde iptal butonu görünür;
+            // sunucu da aynı kuralı (cargo_state = 0) zorunlu tutar.
+            container.querySelectorAll('.user-order-cancel').forEach(btn => {
+                btn.onclick = async () => {
+                    const orderId = btn.dataset.orderId;
+                    if (!confirm(`Sipariş #${orderId} iptal edilecek. Onaylıyor musunuz?`)) return;
+                    const reason = prompt('İptal nedeni (isteğe bağlı):') || '';
+
+                    btn.disabled = true;
+                    btn.textContent = 'İptal ediliyor...';
+                    try {
+                        const res = await fetch(`/api/user/orders/${orderId}/cancel`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ reason })
+                        });
+                        if (window.feyzayOturumKontrol(res)) return;
+                        const data = await res.json();
+                        if (data.success) {
+                            window.showToast(data.message || 'Siparişiniz iptal edildi.', 'success');
+                            window.viewOrdersModal();
+                        } else {
+                            window.showToast(data.message || 'Sipariş iptal edilemedi.', 'error');
+                            btn.disabled = false;
+                            btn.textContent = 'Siparişi İptal Et';
+                        }
+                    } catch (e) {
+                        window.showToast('Sunucu hatası!', 'error');
+                        btn.disabled = false;
+                        btn.textContent = 'Siparişi İptal Et';
+                    }
+                };
+            });
             // Yalnızca "Kargoda" aşamasındaki siparişlerde canlı Aras durumunu zenginleştir.
             result.orders.forEach(async (order) => {
                 if (order.cancelReason || order.cargoState !== 1) return;

@@ -1036,9 +1036,21 @@
                     <label>E-posta</label>
                     <input type="text" id="u-email">
                 </div>
+                <div class="adm-field">
+                    <label>Mahalle</label>
+                    <input type="text" id="u-mahalle" placeholder="Örn: Atatürk Mah.">
+                </div>
+                <div class="adm-field">
+                    <label>Cadde / Sokak</label>
+                    <input type="text" id="u-cadde" placeholder="Örn: Vatan Caddesi">
+                </div>
+                <div class="adm-field">
+                    <label>Bina / Daire No</label>
+                    <input type="text" id="u-binano" placeholder="Örn: No:12 D:4">
+                </div>
                 <div class="adm-user-edit-grid">
                     <div class="adm-field">
-                        <label>Şehir</label>
+                        <label>Şehir / İl</label>
                         <input type="text" id="u-city">
                     </div>
                     <div class="adm-field">
@@ -1046,14 +1058,10 @@
                         <input type="text" id="u-district">
                     </div>
                 </div>
-                <div class="adm-field">
-                    <label>Adres</label>
-                    <input type="text" id="u-street">
-                </div>
                 <div class="adm-user-edit-grid">
                     <div class="adm-field">
                         <label>Posta Kodu</label>
-                        <input type="text" id="u-zipcode">
+                        <input type="number" id="u-zipcode">
                     </div>
                     <div class="adm-field">
                         <label>Yeni Şifre (opsiyonel)</label>
@@ -1073,6 +1081,30 @@
                 <div class="adm-modal-actions">
                     <button type="button" class="adm-btn adm-btn-outline" id="u-cancel-btn">Vazgeç</button>
                     <button type="submit" class="adm-btn" id="u-submit-btn">Kullanıcıyı Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============ KULLANICI MAİL MODALI ============ -->
+    <div class="adm-modal-overlay" id="adm-mail-modal">
+        <div class="adm-modal">
+            <h3>Kullanıcıya E-posta Gönder</h3>
+            <p class="adm-modal-sub" id="adm-mail-sub"></p>
+            <div class="adm-form-error" id="adm-mail-error"></div>
+
+            <form id="adm-mail-form">
+                <div class="adm-field">
+                    <label>Konu</label>
+                    <input type="text" id="m-subject">
+                </div>
+                <div class="adm-field">
+                    <label>Mesaj</label>
+                    <textarea id="m-message" placeholder="Müşteriye iletilecek mesaj"></textarea>
+                </div>
+                <div class="adm-modal-actions">
+                    <button type="button" class="adm-btn adm-btn-outline" id="m-cancel-btn">Vazgeç</button>
+                    <button type="submit" class="adm-btn" id="m-submit-btn">Gönder</button>
                 </div>
             </form>
         </div>
@@ -1729,6 +1761,8 @@
         // =====================================================================
         let butunKullanicilar = [];
         let duzenlenenKullaniciId = null;
+        let siparisleriAcikKullaniciId = null;
+        let mailGonderilenKullaniciId = null;
 
         async function yukleKullanicilar() {
             const list = document.getElementById('adm-users-list');
@@ -1769,6 +1803,7 @@
                         <div style="display:flex; gap:8px; flex-wrap:wrap;">
                             <button class="adm-btn adm-btn-outline" data-user-action="orders" data-id="${u.id}">Siparişler</button>
                             <button class="adm-btn adm-btn-outline" data-user-action="edit" data-id="${u.id}">Düzenle</button>
+                            <button class="adm-btn adm-btn-outline" data-user-action="mail" data-id="${u.id}">Mail Gönder</button>
                             <button class="adm-btn adm-btn-danger" data-user-action="delete" data-id="${u.id}">Sil</button>
                         </div>
                     </div>
@@ -1785,11 +1820,13 @@
             const id = Number(btn.dataset.id);
             if (btn.dataset.userAction === 'orders') kullaniciSiparisleri(id);
             else if (btn.dataset.userAction === 'edit') kullaniciDuzenle(id);
+            else if (btn.dataset.userAction === 'mail') kullaniciMailAc(id);
             else if (btn.dataset.userAction === 'delete') kullaniciSil(id);
         });
 
         // ---------- Kullanıcının siparişleri ----------
         async function kullaniciSiparisleri(id) {
+            siparisleriAcikKullaniciId = id;
             const u = butunKullanicilar.find(k => k.id === id);
             document.getElementById('adm-user-orders-sub').textContent = u ? `${u.firstName} ${u.lastName} · ${u.email}` : '';
             const body = document.getElementById('adm-user-orders-body');
@@ -1805,9 +1842,14 @@
                 }
                 body.innerHTML = orders.map(o => {
                     const tarih = new Date(o.createdAt).toLocaleString('tr-TR');
-                    const kargoBadge = o.cargoState === 1
+                    const kargoBadge = o.cancelReason
+                        ? '<span class="adm-badge bad"><span class="dot"></span>İptal Edildi</span>'
+                        : o.cargoState === 1
                         ? '<span class="adm-badge good"><span class="dot"></span>Kargoda</span>'
                         : '<span class="adm-badge info"><span class="dot"></span>Hazırlanıyor</span>';
+                    const iptalHtml = o.cancelReason
+                        ? `<p style="font-size:13px; margin-top:4px; color:#c0392b;">İptal nedeni: ${esc(o.cancelReason)}</p>`
+                        : `<button class="adm-btn adm-btn-danger" data-siparis-iptal="${o.id}" style="margin-top:8px;">Siparişi İptal Et</button>`;
                     const kalemler = o.cartData.map(i => `
                         <div class="adm-item-row">${esc(i.name)} <span class="adm-item-meta">(${esc(i.beden)}${i.renk ? ' - ' + esc(i.renk) : ''}) × ${i.adet}</span></div>
                     `).join('');
@@ -1832,6 +1874,7 @@
                                 <div class="adm-order-col">
                                     <h4>Takip Numarası</h4>
                                     <p><strong>${esc(o.cargoTrackingCode || '—')}</strong></p>
+                                    ${iptalHtml}
                                 </div>
                             </div>
                         </div>
@@ -1842,6 +1885,99 @@
             }
         }
         document.getElementById('adm-user-orders-close').onclick = () => document.getElementById('adm-user-orders-modal').classList.remove('active');
+
+        // ---------- Kullanıcının siparişini iptal etme ----------
+        document.getElementById('adm-user-orders-body').addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-siparis-iptal]');
+            if (!btn) return;
+            kullaniciSiparisiIptal(Number(btn.dataset.siparisIptal), btn);
+        });
+
+        // İptal, Kargo Yönetimi'ndeki uç noktayı kullanır (tüm aşamalar + Aras iptali).
+        async function kullaniciSiparisiIptal(orderId, btn) {
+            if (!confirm(`Sipariş #${orderId} iptal edilecek ve müşteriye e-posta gönderilecek. Onaylıyor musunuz?`)) return;
+            const reason = prompt(`Sipariş #${orderId} için iptal nedeni (müşteriye e-postayla gönderilecek):`);
+            if (reason === null) return; // vazgeçildi
+            if (!reason.trim()) {
+                toast('İptal nedeni boş olamaz, işlem yapılmadı.', 'error');
+                return;
+            }
+            if (btn) { btn.disabled = true; btn.textContent = 'İptal ediliyor...'; }
+            try {
+                const res = await adminFetch(`/api/admin/shipments/${orderId}/cancel`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reason: reason.trim() })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    if (data.arasWarning) {
+                        toast(`Sipariş #${orderId} iptal edildi. UYARI: Aras kaydı iptal edilemedi (${data.arasWarning}) — manuel takip gerekli.`, 'error');
+                    } else {
+                        toast(`Sipariş #${orderId} iptal edildi, müşteriye e-posta gönderildi.`);
+                    }
+                    if (siparisleriAcikKullaniciId) kullaniciSiparisleri(siparisleriAcikKullaniciId);
+                } else {
+                    toast(data.message || 'İptal başarısız.', 'error');
+                    if (btn) { btn.disabled = false; btn.textContent = 'Siparişi İptal Et'; }
+                }
+            } catch (e) {
+                toast('İptal sırasında hata oluştu.', 'error');
+                if (btn) { btn.disabled = false; btn.textContent = 'Siparişi İptal Et'; }
+            }
+        }
+
+        // ---------- Kullanıcıya e-posta gönderme ----------
+        function kullaniciMailAc(id) {
+            const u = butunKullanicilar.find(k => k.id === id);
+            if (!u) return;
+            mailGonderilenKullaniciId = id;
+            document.getElementById('adm-mail-sub').textContent = `Alıcı: ${u.email}`;
+            document.getElementById('adm-mail-error').style.display = 'none';
+            document.getElementById('m-subject').value = '';
+            document.getElementById('m-message').value = '';
+            document.getElementById('adm-mail-modal').classList.add('active');
+        }
+        document.getElementById('m-cancel-btn').onclick = () => document.getElementById('adm-mail-modal').classList.remove('active');
+
+        document.getElementById('adm-mail-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const errEl = document.getElementById('adm-mail-error');
+            errEl.style.display = 'none';
+
+            const subject = document.getElementById('m-subject').value.trim();
+            const message = document.getElementById('m-message').value.trim();
+            if (!subject || !message) {
+                errEl.textContent = 'Konu ve mesaj zorunludur.';
+                errEl.style.display = 'block';
+                return;
+            }
+
+            const submitBtn = document.getElementById('m-submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Gönderiliyor...';
+            try {
+                const res = await adminFetch('/api/admin/users/' + mailGonderilenKullaniciId + '/mail', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ subject, message })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    toast(data.message || 'E-posta gönderildi.');
+                    document.getElementById('adm-mail-modal').classList.remove('active');
+                } else {
+                    errEl.textContent = data.message || 'E-posta gönderilemedi.';
+                    errEl.style.display = 'block';
+                }
+            } catch (e2) {
+                errEl.textContent = 'Sunucuya bağlanılamadı.';
+                errEl.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Gönder';
+            }
+        });
 
         // ---------- Kullanıcı düzenleme ----------
         function kullaniciDuzenle(id) {
@@ -1854,7 +1990,19 @@
             document.getElementById('u-email').value = u.email || '';
             document.getElementById('u-city').value = u.city || '';
             document.getElementById('u-district').value = u.district || '';
-            document.getElementById('u-street').value = u.street || '';
+            // Adres, ödeme formuyla aynı biçimde saklanır: street = JSON {mahalle, cadde, binaNo}
+            let adresParcalari = { mahalle: '', cadde: '', binaNo: '' };
+            if (u.street) {
+                try {
+                    const obj = JSON.parse(u.street);
+                    if (obj.mahalle) adresParcalari = obj;
+                } catch (e) {
+                    adresParcalari.cadde = u.street;
+                }
+            }
+            document.getElementById('u-mahalle').value = adresParcalari.mahalle || '';
+            document.getElementById('u-cadde').value = adresParcalari.cadde || '';
+            document.getElementById('u-binano').value = adresParcalari.binaNo || '';
             document.getElementById('u-zipcode').value = u.zipcode || '';
             document.getElementById('u-password').value = '';
             document.getElementById('u-verified').checked = !!u.isVerified;
@@ -1875,7 +2023,13 @@
                 email: document.getElementById('u-email').value.trim(),
                 city: document.getElementById('u-city').value.trim(),
                 district: document.getElementById('u-district').value.trim(),
-                street: document.getElementById('u-street').value.trim(),
+                street: (() => {
+                    const mahalle = document.getElementById('u-mahalle').value.trim();
+                    const cadde = document.getElementById('u-cadde').value.trim();
+                    const binaNo = document.getElementById('u-binano').value.trim();
+                    if (!mahalle && !cadde && !binaNo) return '';
+                    return JSON.stringify({ mahalle, cadde, binaNo });
+                })(),
                 zipcode: document.getElementById('u-zipcode').value.trim(),
                 isVerified: document.getElementById('u-verified').checked,
                 marketingConsent: document.getElementById('u-marketing').checked

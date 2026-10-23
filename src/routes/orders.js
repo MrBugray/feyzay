@@ -8,9 +8,77 @@ const { encryptData, decryptData, hashPassword, verifyPassword } = require('../l
 const { sendMail } = require('../lib/mailer');
 const { katalogUrun, stokYeterliMi } = require('../lib/catalog');
 const { kullaniciGerekli } = require('../middleware/session');
-const { xmlKacis, cdataKacis } = require('../services/arasKargo');
+const { xmlKacis, cdataKacis, cancelDispatch } = require('../services/arasKargo');
 
 const router = express.Router();
+
+// Yeni sipariş bildirimlerinin gönderileceği yönetici adresi.
+const ADMIN_SIPARIS_MAIL = 'yomerbugra64@gmail.com';
+const INTEGRATION_PREFIX = 'FZ-';
+
+// Sipariş ödendiğinde yöneticiye tüm sipariş detaylarını gönderir.
+// Çağıran akışı beklemez (fire-and-forget); mail hatası siparişi etkilemez.
+function adminSiparisBildirimi(order) {
+    db.all(`SELECT urun_id, urun_name, beden, renk, adet FROM order_items WHERE order_id = ?`, [order.id], (err, items) => {
+        if (err) return;
+
+        const musteriAdi = `${decryptData(order.first_name)} ${decryptData(order.last_name)}`.trim();
+        const musteriMaili = decryptData(order.email);
+        const telefon = decryptData(order.phone);
+        const sehir = decryptData(order.city);
+        const ilce = decryptData(order.district);
+        const postaKodu = decryptData(order.zipcode);
+        const hamAdres = decryptData(order.street);
+
+        // street alanı çoğu siparişte {mahalle, cadde, binaNo} JSON'u olarak saklanır;
+        // eski düz metin adresler olduğu gibi gösterilir.
+        let acikAdres = hamAdres;
+        try {
+            const obj = JSON.parse(hamAdres);
+            if (obj && (obj.mahalle || obj.cadde || obj.binaNo)) {
+                acikAdres = [obj.mahalle, obj.cadde, obj.binaNo].filter(Boolean).join(', ');
+            }
+        } catch (e) { }
+
+        const urunSatirlari = (items || []).map(i => `
+            <tr>
+                <td style="padding: 6px 10px; border-bottom: 1px solid #eee;">${i.urun_id}</td>
+                <td style="padding: 6px 10px; border-bottom: 1px solid #eee;">${i.urun_name}</td>
+                <td style="padding: 6px 10px; border-bottom: 1px solid #eee;">${i.renk || '-'}</td>
+                <td style="padding: 6px 10px; border-bottom: 1px solid #eee;">${i.beden}</td>
+                <td style="padding: 6px 10px; border-bottom: 1px solid #eee;">${i.adet}</td>
+            </tr>
+        `).join('');
+
+        const mailIcerigi = `
+            <div style="font-family: sans-serif; color: #111; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+                <h2 style="color: #111;">Yeni Sipariş Alındı!</h2>
+                <p><strong>Sipariş No:</strong> #${order.id}<br>
+                <strong>Tarih:</strong> ${new Date(order.created_at).toLocaleString('tr-TR')}<br>
+                <strong>Ödeme Durumu:</strong> Ödendi</p>
+                <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin: 20px 0;">
+                    <p style="margin: 0 0 8px 0;"><strong>Müşteri:</strong> ${musteriAdi}</p>
+                    <p style="margin: 0 0 8px 0;"><strong>E-posta:</strong> ${musteriMaili}</p>
+                    <p style="margin: 0 0 8px 0;"><strong>Telefon:</strong> ${telefon || '-'}</p>
+                    <p style="margin: 0;"><strong>Adres:</strong><br>${acikAdres}<br>${ilce} / ${sehir}${postaKodu ? ' ' + postaKodu : ''}</p>
+                </div>
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <tr style="background: #f0f0f0;">
+                        <th style="padding: 6px 10px; text-align: left;">Ürün ID</th>
+                        <th style="padding: 6px 10px; text-align: left;">Ürün</th>
+                        <th style="padding: 6px 10px; text-align: left;">Renk</th>
+                        <th style="padding: 6px 10px; text-align: left;">Beden</th>
+                        <th style="padding: 6px 10px; text-align: left;">Adet</th>
+                    </tr>
+                    ${urunSatirlari}
+                </table>
+                <p style="font-size: 16px; margin-top: 20px;"><strong>Toplam Tutar:</strong> ${(order.total_amount / 100).toFixed(2)} TL</p>
+            </div>
+        `;
+
+        sendMail(ADMIN_SIPARIS_MAIL, `Yeni Sipariş (#${order.id}) - Feyzay`, mailIcerigi);
+    });
+}
 
 // ================= ARAS KARGO CANLI DURUM SORGULAMA ==================
 router.post('/api/user/cargo-status', kullaniciGerekli, async (req, res) => {
@@ -308,6 +376,9 @@ router.post('/api/paytr-callback', (req, res) => {
                     </div>
                 `;
                 sendMail(musteriMaili, `Siparişiniz Alındı (#${order.id}) - Feyzay`, siparisMaili);
+
+                // Yöneticiye de tüm sipariş detaylarıyla bildirim gönderilir.
+                adminSiparisBildirimi(order);
             });
         });
     } else {
@@ -451,6 +522,56 @@ router.post('/api/user/orders', kullaniciGerekli, (req, res) => {
         const finalOrders = Object.values(ordersMap).sort((a, b) => b.id - a.id);
         res.json({ success: true, orders: finalOrders });
     });
+});
+
+// Kullanıcının KENDİ siparişini iptali: yalnızca henüz kargoya verilmemiş
+// (cargo_state = 0; "Onay Bekliyor" ve "Hazırlanıyor" aşamaları) siparişlerde.
+// Kargodaki siparişler iade sürecine girdiği için buradan iptal edilemez.
+// Durum güncellemesi admin iptaliyle aynıdır; Aras'a gönderildiyse CancelDispatch denenir.
+router.post('/api/user/orders/:id/cancel', kullaniciGerekli, async (req, res) => {
+    const orderId = Number(req.params.id);
+    if (!Number.isInteger(orderId) || orderId < 1) {
+        return res.status(400).json({ success: false, message: 'Geçersiz sipariş numarası.' });
+    }
+
+    const reason = typeof req.body.reason === 'string' && req.body.reason.trim()
+        ? req.body.reason.trim()
+        : 'Müşteri kendi talebiyle siparişi iptal etti.';
+    if (reason.length > 500) {
+        return res.status(400).json({ success: false, message: 'İptal nedeni en fazla 500 karakter olabilir.' });
+    }
+
+    try {
+        const order = await dbGet(`SELECT * FROM orders WHERE id = ? AND user_id = ? AND payment_status = 1`,
+            [orderId, req.oturum.user_id]);
+        if (!order) return res.status(404).json({ success: false, message: 'Sipariş bulunamadı.' });
+        if (order.cancel_reason) return res.status(409).json({ success: false, message: 'Sipariş zaten iptal edilmiş.' });
+        if (order.cargo_state === 1) {
+            return res.status(409).json({ success: false, message: 'Kargoya verilmiş sipariş iptal edilemez. İade koşulları için bizimle iletişime geçin.' });
+        }
+
+        const arasaGonderildi = order.approval_state === 1 || Boolean(order.aras_waybill);
+        let arasWarning = null;
+        if (arasaGonderildi) {
+            const result = await cancelDispatch(INTEGRATION_PREFIX + orderId);
+            if (!result.success) {
+                arasWarning = `${result.code || '?'}: ${result.message || 'bilinmeyen Aras hatası'}`;
+            }
+        }
+
+        db.run(`UPDATE orders SET approval_state = 0, cargo_state = 0, cargo_tracking_code = NULL, aras_waybill = NULL, aras_error = NULL, cancel_reason = ? WHERE id = ?`,
+            [reason, orderId]);
+
+        res.json({
+            success: true,
+            message: arasWarning
+                ? `Siparişiniz iptal edildi ancak kargo kaydı iptal edilemedi; lütfen bizimle iletişime geçin. (${arasWarning})`
+                : 'Siparişiniz iptal edildi.',
+            arasWarning
+        });
+    } catch (e) {
+        res.status(500).json({ success: false, message: 'İptal hatası: ' + e.message });
+    }
 });
 
 module.exports = router;

@@ -293,6 +293,8 @@ router.get('/api/admin/users/:id/orders', adminGerekli, (req, res) => {
                     cargoState: row.cargo_state,
                     cargoTrackingCode: row.cargo_tracking_code,
                     arasError: row.aras_error,
+                    approvalState: row.approval_state,
+                    cancelReason: row.cancel_reason || null,
                     createdAt: row.created_at,
                     cartData: []
                 };
@@ -310,6 +312,35 @@ router.get('/api/admin/users/:id/orders', adminGerekli, (req, res) => {
 
         const finalOrders = Object.values(ordersMap).sort((a, b) => b.id - a.id);
         res.json({ success: true, orders: finalOrders });
+    });
+});
+
+// Kullanıcıya panelden e-posta gönderir; SMTP yapılandırılmamışsa başarı bildirmez.
+router.post('/api/admin/users/:id/mail', adminGerekli, async (req, res) => {
+    const { subject, message } = req.body;
+    if (!subject || !subject.trim() || !message || !message.trim()) {
+        return res.status(400).json({ success: false, message: 'Konu ve mesaj zorunludur.' });
+    }
+
+    db.get(`SELECT email, first_name FROM users WHERE id = ?`, [req.params.id], async (err, row) => {
+        if (err) return res.status(500).json({ success: false, message: 'Veritabanı hatası.' });
+        if (!row) return res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı.' });
+
+        const guvenliMesaj = message.trim().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+        const mailIcerigi = `
+            <div style="font-family: sans-serif; color: #111; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+                <p>Merhaba ${row.first_name},</p>
+                <p>${guvenliMesaj}</p>
+                <br>
+                <p><strong>Feyzay Ekibi</strong></p>
+            </div>
+        `;
+
+        const gonderildi = await sendMail(row.email, subject.trim(), mailIcerigi);
+        if (!gonderildi) {
+            return res.status(503).json({ success: false, message: 'E-posta gönderilemedi. SMTP ayarlarını ve sunucu kayıtlarını kontrol edin.' });
+        }
+        res.json({ success: true, message: 'E-posta gönderildi.' });
     });
 });
 
