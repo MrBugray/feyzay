@@ -182,8 +182,13 @@ router.post('/api/checkout', async (req, res) => {
         }
 
 
-        const sepet = [];
-        for (const satir of cart) {
+        // Telefon zorunlu: PayTR 3D Secure ve güvenlik kontrollerinde gerçek numara kullanır.
+        const temizTel = typeof phone === 'string' ? phone.replace(/[\s()-]/g, '') : '';
+        if (!/^\+?\d{10,13}$/.test(temizTel)) {
+            return res.status(400).json({ success: false, message: 'Geçerli bir telefon numarası zorunludur (örn. 05XXXXXXXXX).' });
+        }
+
+        const sepet = [];        for (const satir of cart) {
             const urun = katalogUrun(satir.id);
             if (!urun) {
                 return res.status(400).json({ success: false, message: 'Sepetteki ürün bulunamadı.' });
@@ -231,7 +236,7 @@ router.post('/api/checkout', async (req, res) => {
         const merchant_oid = "FEYZAY" + Date.now() + Math.floor(Math.random() * 1000);
         const user_name = `${alici.firstName || ''} ${alici.lastName || ''}`.trim();
         const user_address = [addressObj.city, addressObj.district, addressObj.street].filter(Boolean).join(' ');
-        const user_phone = phone || "05555555555";
+        const user_phone = temizTel.slice(0, 20); // PayTR kısıtı: en fazla 20 karakter
 
         const merchant_ok_url = `${config.env.SITE_URL}/api/paytr-success`;
         const merchant_fail_url = `${config.env.SITE_URL}/api/paytr-fail`;
@@ -247,7 +252,7 @@ router.post('/api/checkout', async (req, res) => {
             user_ip = '85.105.105.105';
         }
         const timeout_limit = 30;
-        const debug_on = 1;
+        const debug_on = 0; // Canlıda 0 olmalı (PayTR dokümanı); hata ayıklama için geçici 1 yapılabilir.
         const test_mode = 0;
         const no_installment = 0;
         const max_installment = 0;
@@ -291,7 +296,7 @@ router.post('/api/checkout', async (req, res) => {
             const encDistrict = encryptData(addressObj.district || '');
             const encStreet = encryptData(addressObj.street || '');
             const encZipcode = encryptData(addressObj.zipcode || '');
-            const encPhone = encryptData(phone || '');
+            const encPhone = encryptData(temizTel);
 
             const orderSql = `INSERT INTO orders (merchant_oid, user_id, email, first_name, last_name, city, district, street, zipcode, phone, total_amount, payment_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`;
             db.run(orderSql, [merchant_oid, alici.userId, encEmail, encFirstName, encLastName, encCity, encDistrict, encStreet, encZipcode, encPhone, payment_amount], async function (err) {
@@ -337,54 +342,62 @@ router.post('/api/paytr-callback', (req, res) => {
         return res.send('PAYTR notification failed: bad hash');
     }
 
-    if (status === 'success') {
-        db.get(`SELECT * FROM orders WHERE merchant_oid = ?`, [merchant_oid], (err, order) => {
-            if (err || !order) {
-                console.error(`[PAYTR] Bildirimdeki sipariş bulunamadı: ${merchant_oid}`);
+    db.get(`SELECT * FROM orders WHERE merchant_oid = ?`, [merchant_oid], (err, order) => {
+        if (err || !order) {
+            console.error(`[PAYTR] Bildirimdeki sipariş bulunamadı: ${merchant_oid}`);
+            return res.send('OK');
+        }
+
+        if (status !== 'success') {
+            db.run(`UPDATE orders SET payment_status = -1 WHERE merchant_oid = ? AND payment_status = 0`, [merchant_oid], () => res.send('OK'));
+            return;
+        }
+
+        // Vade farklı taksit seçiminde tahsil edilen tutar (total_amount), 1. adımda gönderilen
+        // payment_amount'tan yüksek olabilir; düşük veya geçersiz tutar reddedilir. (PayTR 2. Adım)
+        const tahsilEdilen = Number(total_amount);
+        if (!Number.isFinite(tahsilEdilen) || tahsilEdilen < Number(order.total_amount)) {
+            console.error(`[PAYTR] Tutar uyuşmazlığı: ${merchant_oid} bildirilen=${total_amount} kayıtlı=${order.total_amount}`);
+            return res.send('OK');
+        }
+
+        // Tahsil edilen gerçek tutar (vade farkı dahil) muhasebe doğruluğu için kayda yazılır.
+        db.run(`UPDATE orders SET payment_status = 1, total_amount = ? WHERE merchant_oid = ? AND payment_status = 0`, [tahsilEdilen, merchant_oid], function (err) {
+            if (err) {
+                console.error(`[PAYTR] Ödeme durumu güncellenemedi: ${merchant_oid} — ${err.message}`);
                 return res.send('OK');
             }
-
-            if (Number(total_amount) !== Number(order.total_amount)) {
-                console.error(`[PAYTR] Tutar uyuşmazlığı: ${merchant_oid} bildirilen=${total_amount} kayıtlı=${order.total_amount}`);
+            // Tekrarlayan bildirimlerde sipariş yeniden işlenmez, yalnızca OK dönülür. (PayTR uyarısı 5)
+            if (this.changes !== 1) {
+                console.log(`[PAYTR] Tekrarlayan bildirim yoksayıldı: ${merchant_oid} (durum zaten ${order.payment_status}).`);
                 return res.send('OK');
             }
+            console.log(`[PAYTR] Sipariş #${order.id} ödendi olarak işaretlendi.`);
+            order.total_amount = tahsilEdilen;
 
-            db.run(`UPDATE orders SET payment_status = 1 WHERE merchant_oid = ? AND payment_status = 0`, [merchant_oid], function (err) {
-                if (err) {
-                    console.error(`[PAYTR] Ödeme durumu güncellenemedi: ${merchant_oid} — ${err.message}`);
-                    return;
-                }
-                if (this.changes !== 1) {
-                    console.error(`[PAYTR] Sipariş #${order.id} güncellenmedi (durum zaten ${order.payment_status}).`);
-                    return;
-                }
-                console.log(`[PAYTR] Sipariş #${order.id} ödendi olarak işaretlendi.`);
+            // Sipariş Onay Mailini Gönder. Kargo entegrasyonu artık burada yapılmıyor;
+            // sipariş önce admin onayından geçer (bkz. Kargo Yönetimi sekmesi).
+            const musteriMaili = decryptData(order.email);
+            const musteriAdi = decryptData(order.first_name);
+            const siparisMaili = `
+                <div style="font-family: sans-serif; color: #111; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+                    <h2 style="color: #2ecc71;">Siparişiniz Alındı!</h2>
+                    <p>Merhaba ${musteriAdi},</p>
+                    <p><strong>#${order.id}</strong> numaralı siparişiniz başarıyla alınmış ve hazırlanmaya başlanmıştır.</p>
+                    <p>Paketiniz kargoya teslim edildiğinde takip numaranız ile birlikte size tekrar haber vereceğiz.</p>
+                    <br>
+                    <p>Bizi tercih ettiğiniz için teşekkür ederiz.</p>
+                    <p><strong>Feyzay Ekibi</strong></p>
+                </div>
+            `;
+            sendMail(musteriMaili, `Siparişiniz Alındı (#${order.id}) - Feyzay`, siparisMaili);
 
-                // Sipariş Onay Mailini Gönder. Kargo entegrasyonu artık burada yapılmıyor;
-                // sipariş önce admin onayından geçer (bkz. Kargo Yönetimi sekmesi).
-                const musteriMaili = decryptData(order.email);
-                const musteriAdi = decryptData(order.first_name);
-                const siparisMaili = `
-                    <div style="font-family: sans-serif; color: #111; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
-                        <h2 style="color: #2ecc71;">Siparişiniz Alındı!</h2>
-                        <p>Merhaba ${musteriAdi},</p>
-                        <p><strong>#${order.id}</strong> numaralı siparişiniz başarıyla alınmış ve hazırlanmaya başlanmıştır.</p>
-                        <p>Paketiniz kargoya teslim edildiğinde takip numaranız ile birlikte size tekrar haber vereceğiz.</p>
-                        <br>
-                        <p>Bizi tercih ettiğiniz için teşekkür ederiz.</p>
-                        <p><strong>Feyzay Ekibi</strong></p>
-                    </div>
-                `;
-                sendMail(musteriMaili, `Siparişiniz Alındı (#${order.id}) - Feyzay`, siparisMaili);
+            // Yöneticiye de tüm sipariş detaylarıyla bildirim gönderilir.
+            adminSiparisBildirimi(order);
 
-                // Yöneticiye de tüm sipariş detaylarıyla bildirim gönderilir.
-                adminSiparisBildirimi(order);
-            });
+            res.send('OK');
         });
-    } else {
-        db.run(`UPDATE orders SET payment_status = -1 WHERE merchant_oid = ? AND payment_status = 0`, [merchant_oid]);
-    }
-    res.send('OK');
+    });
 });
 
 router.get('/api/paytr-success', (req, res) => {

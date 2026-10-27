@@ -146,7 +146,8 @@ window.askForAddress = async function (isGuest) {
                     <div style="flex: 2;"><label style="display: block; font-size: 12px; margin-bottom: 4px; color: #777;">Şehir / İl</label><input type="text" id="feyzay-city" value="${feyzayEsc(saved.city)}" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;"></div>
                     <div style="flex: 2;"><label style="display: block; font-size: 12px; margin-bottom: 4px; color: #777;">İlçe</label><input type="text" id="feyzay-district" value="${feyzayEsc(saved.district)}" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;"></div>
                 </div>
-                <div style="margin-bottom: 20px;"><label style="display: block; font-size: 12px; margin-bottom: 4px; color: #777;">Posta Kodu</label><input type="number" id="feyzay-zipcode" value="${feyzayEsc(saved.zipcode)}" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;"></div>
+                <div style="margin-bottom: 12px;"><label style="display: block; font-size: 12px; margin-bottom: 4px; color: #777;">Posta Kodu</label><input type="number" id="feyzay-zipcode" value="${feyzayEsc(saved.zipcode)}" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;"></div>
+                <div style="margin-bottom: 20px;"><label style="display: block; font-size: 12px; margin-bottom: 4px; color: #777;">Telefon</label><input type="tel" id="feyzay-telefon" placeholder="Örn: 05XX XXX XX XX" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;"></div>
 
                 <div style="margin-bottom: 16px; padding-top: 12px; border-top: 1px solid #eee;">
                     <div class="feyzay-consent">
@@ -187,6 +188,7 @@ window.askForAddress = async function (isGuest) {
             const city = document.getElementById('feyzay-city').value.trim();
             const district = document.getElementById('feyzay-district').value.trim();
             const zipcode = document.getElementById('feyzay-zipcode').value.trim();
+            const telefon = document.getElementById('feyzay-telefon').value.trim();
 
             const onBilgiOnay = document.getElementById('feyzay-on-bilgi-onay');
             const mesafeliOnay = document.getElementById('feyzay-mesafeli-onay');
@@ -212,8 +214,14 @@ window.askForAddress = async function (isGuest) {
                 return;
             }
 
+            const telRakam = telefon.replace(/\D/g, '');
+            if (telRakam.length < 10 || telRakam.length > 13) {
+                window.showToast('Geçerli bir telefon numarası girin (örn. 05XXXXXXXXX).', 'error');
+                return;
+            }
+
             const combinedStreet = JSON.stringify({ mahalle, cadde, binaNo });
-            close({ addressObj: { city, district, street: combinedStreet, zipcode }, guestData });
+            close({ addressObj: { city, district, street: combinedStreet, zipcode }, guestData, phone: telefon });
         };
     });
 };
@@ -1116,7 +1124,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const { addressObj, guestData } = resData;
+            const { addressObj, guestData, phone } = resData;
             const originalText = e.target.innerText;
             e.target.innerText = "Güvenli Ödemeye Bağlanıyor...";
 
@@ -1130,6 +1138,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         firstName: (isGuest ? guestData.firstName : (aktifKullanici?.name || aktifKullanici?.firstName)) || '',
                         lastName: (isGuest ? guestData.lastName : aktifKullanici?.lastName) || '',
                         addressObj,
+                        phone,
                         cart: sepet
                     })
                 });

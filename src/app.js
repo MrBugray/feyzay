@@ -12,6 +12,9 @@ const adminRoutes = require('./routes/admin');
 const shipmentRoutes = require('./routes/shipments');
 
 const app = express();
+// Reverse proxy (nginx/Cloudflare vb.) arkasında gerçek müşteri IP'sini almak için;
+// PayTR user_ip alanında kullanılır.
+app.set('trust proxy', 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
