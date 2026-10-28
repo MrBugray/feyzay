@@ -13,7 +13,7 @@ const { xmlKacis, cdataKacis, cancelDispatch } = require('../services/arasKargo'
 const router = express.Router();
 
 // Yeni sipariş bildirimlerinin gönderileceği yönetici adresi.
-const ADMIN_SIPARIS_MAIL = 'yomerbugra64@gmail.com';
+const ADMIN_SIPARIS_MAIL = 'feyza.uner@hotmail.com';
 const INTEGRATION_PREFIX = 'FZ-';
 
 // Sipariş ödendiğinde yöneticiye tüm sipariş detaylarını gönderir.
@@ -188,7 +188,7 @@ router.post('/api/checkout', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Geçerli bir telefon numarası zorunludur (örn. 05XXXXXXXXX).' });
         }
 
-        const sepet = [];        for (const satir of cart) {
+        const sepet = []; for (const satir of cart) {
             const urun = katalogUrun(satir.id);
             if (!urun) {
                 return res.status(400).json({ success: false, message: 'Sepetteki ürün bulunamadı.' });
