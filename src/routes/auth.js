@@ -67,15 +67,26 @@ router.get('/api/verify-email', (req, res) => {
             `);
         }
 
-        // Onay başarılıysa token'ı sil ve is_verified = 1 yap
+        // Onay başarılıysa token'ı sil, is_verified = 1 yap ve kullanıcıyı otomatik giriş yaptır
         db.run(`UPDATE users SET is_verified = 1, verify_token = NULL WHERE id = ?`, [row.id], () => {
-            res.send(`
-                <div style="text-align:center; font-family:sans-serif; margin-top:100px;">
-                    <h1 style="color:#2ecc71;">Hesabınız Onaylandı!</h1>
-                    <p>E-posta adresiniz başarıyla doğrulandı. Yönlendiriliyorsunuz...</p>
-                    <script>setTimeout(() => { window.location.href = '/kayit.html'; }, 3000);</script>
-                </div>
-            `);
+            oturumOlustur(res, row.id, false, (oturumErr) => {
+                if (oturumErr) {
+                    return res.send(`
+                        <div style="text-align:center; font-family:sans-serif; margin-top:100px;">
+                            <h1 style="color:#2ecc71;">Hesabınız Onaylandı!</h1>
+                            <p>E-posta adresiniz doğrulandı ancak oturum açılamadı. Lütfen giriş yapın.</p>
+                            <a href="/kayit.html" style="color:#111; font-weight:bold;">Giriş sayfasına git</a>
+                        </div>
+                    `);
+                }
+                res.send(`
+                    <div style="text-align:center; font-family:sans-serif; margin-top:100px;">
+                        <h1 style="color:#2ecc71;">Hesabınız Onaylandı!</h1>
+                        <p>E-posta adresiniz doğrulandı ve giriş yapıldı. Yönlendiriliyorsunuz...</p>
+                        <script>setTimeout(() => { window.location.href = '/index.html'; }, 2000);</script>
+                    </div>
+                `);
+            });
         });
     });
 });

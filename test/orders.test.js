@@ -58,7 +58,7 @@ test('paytr-callback: ödeme işlenir, yönetici ve müşteri mailleri yakalanı
     let adminMail;
     for (let i = 0; i < 40 && !adminMail; i++) {
         await new Promise(r => setTimeout(r, 100));
-        adminMail = ortam.mailler.find(m => m.to === 'yomerbugra64@gmail.com');
+        adminMail = ortam.mailler.find(m => m.to === 'feyza.uner@hotmail.com');
     }
     assert.ok(adminMail, 'yönetici bildirimi yakalanmalı');
     assert.equal(adminMail.subject, `Yeni Sipariş (#${paidOrderId}) - Feyzay`);

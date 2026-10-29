@@ -46,6 +46,18 @@ test('login: onaysız hesap ve yanlış şifre reddedilir', async () => {
     assert.equal(yanlis.status, 401);
 });
 
+test('verify-email: onay sonrası otomatik giriş yapılır', async () => {
+    await api.req('POST', '/api/signup', { firstName: 'Oto', lastName: 'Giris', email: 'oto@example.com', password: 'Test1234' });
+    const token = (await dbGet(`SELECT verify_token t FROM users WHERE email = 'oto@example.com'`)).t;
+    const onay = await api.req('GET', '/api/verify-email?token=' + token);
+    assert.equal(onay.status, 200);
+
+    // Ayrı bir oturum açma isteği olmadan /api/me kullanıcıyı dönmeli (oturum çerezi onay sırasında yazıldı).
+    const bilgi = await api.req('GET', '/api/me');
+    assert.equal(bilgi.data.user.email, 'oto@example.com');
+    await api.req('POST', '/api/logout');
+});
+
 test('verify-email + login + /api/me akışı', async () => {
     const giris = await api.req('POST', '/api/login', { email: 'ali@example.com', password: 'Test1234' });
     assert.equal(giris.data.success, true);
